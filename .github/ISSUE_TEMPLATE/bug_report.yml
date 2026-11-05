@@ -1,0 +1,22 @@
+name: Сообщить об ошибке
+description: Опишите воспроизводимую проблему
+body:
+  - type: textarea
+    id: problem
+    attributes:
+      label: Что произошло?
+      description: Опишите ожидаемое и фактическое поведение.
+    validations:
+      required: true
+  - type: input
+    id: browser
+    attributes:
+      label: Браузер и устройство
+    validations:
+      required: true
+  - type: textarea
+    id: steps
+    attributes:
+      label: Шаги воспроизведения
+    validations:
+      required: true

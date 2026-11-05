@@ -1,0 +1,1882 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
+<title>Калькулятор кондитера — себестоимость без таблиц</title>
+<meta name="theme-color" content="#F4EFE8">
+<meta name="description" content="Локальный калькулятор себестоимости кондитерских изделий. Без регистрации и серверов.">
+<link rel="manifest" href="../manifest.webmanifest">
+<link rel="icon" href="../assets/icon.svg" type="image/svg+xml">
+<link rel="apple-touch-icon" href="../assets/icon-192.png">
+<style>
+  :root{
+    --bg:#F4EFE8;
+    --surface:#FFFFFF;
+    --text:#211B15;
+    --muted:#8A7F73;
+    --border:#E8E0D6;
+    --accent:#B4562E;
+    --accent-hover:#9A4724;
+    --accent-soft:#FAEDE4;
+    --danger:#C13B2E;
+    --danger-hover:#A52F24;
+    --danger-soft:#FBEAE3;
+    --app-height:100dvh;
+    --app-top:0px;
+  }
+
+  *{box-sizing:border-box}
+  html,body{height:100%}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:-apple-system,BlinkMacSystemFont,"Segoe UI","Inter",Roboto,"Helvetica Neue",sans-serif;
+    font-size:15px;
+    line-height:1.45;
+    -webkit-font-smoothing:antialiased;
+    text-rendering:optimizeLegibility;
+    overflow-x:hidden;
+  }
+  body.locked{overflow:hidden}
+  button{font:inherit;color:inherit;background:none;border:none;cursor:pointer;padding:0}
+  input,select{font:inherit;color:inherit}
+  input[type=number]::-webkit-outer-spin-button,
+  input[type=number]::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+  input[type=number]{-moz-appearance:textfield}
+  svg{display:block}
+
+  .bg-decor{
+    position:fixed;inset:0;z-index:0;pointer-events:none;overflow:hidden;
+    background:
+      radial-gradient(1100px 760px at 88% -12%, #FCE0CB 0%, transparent 55%),
+      radial-gradient(900px 700px at -12% 108%, #EFE2D0 0%, transparent 60%),
+      linear-gradient(180deg,#F7F3ED 0%,#F0E9DF 100%);
+  }
+  .orb{
+    position:absolute;border-radius:50%;
+    filter:blur(46px);opacity:.55;
+    animation:float 20s ease-in-out infinite;
+    will-change:transform;
+  }
+  .o1{width:360px;height:360px;left:-90px;top:-70px;background:radial-gradient(circle,#F7C7A4,transparent 70%)}
+  .o2{width:440px;height:440px;right:-130px;top:18%;background:radial-gradient(circle,#EFD2B2,transparent 70%);animation-delay:-6s}
+  .o3{width:320px;height:320px;left:8%;bottom:-90px;background:radial-gradient(circle,#F3DBC4,transparent 70%);animation-delay:-12s}
+  .ring{
+    position:absolute;border:1.5px solid rgba(180,86,46,.13);border-radius:50%;
+    animation:float 24s ease-in-out infinite;
+  }
+  .r1{width:230px;height:230px;right:7%;bottom:10%}
+  .r2{width:150px;height:150px;left:5%;top:28%;animation-delay:-9s}
+  @keyframes float{
+    0%,100%{transform:translate3d(0,0,0) scale(1)}
+    50%{transform:translate3d(12px,-20px,0) scale(1.06)}
+  }
+
+  .topbar{
+    position:sticky;top:0;z-index:50;
+    display:flex;align-items:center;justify-content:space-between;gap:16px;
+    padding:12px 24px;
+    padding-top:calc(12px + env(safe-area-inset-top));
+    background:rgba(244,239,232,.82);
+    backdrop-filter:blur(16px);
+    -webkit-backdrop-filter:blur(16px);
+    border-bottom:1px solid var(--border);
+  }
+  .brand{display:flex;align-items:center;gap:10px;font-weight:600;letter-spacing:-.015em}
+  .brand svg{width:22px;height:22px;color:var(--accent);flex:none}
+  .brand span{font-size:15px}
+
+  .btn{
+    display:inline-flex;align-items:center;gap:8px;
+    height:38px;padding:0 14px;
+    border-radius:11px;
+    font-size:14px;font-weight:500;
+    white-space:nowrap;
+    transition:background .18s ease,color .18s ease,transform .12s ease;
+  }
+  .btn svg{width:16px;height:16px;flex:none}
+  .btn-ghost{color:var(--muted)}
+  .btn-ghost:hover{background:#EAE4DB;color:var(--text)}
+  .btn-primary{background:var(--accent);color:#fff}
+  .btn-primary:not(:disabled):hover{background:var(--accent-hover)}
+  .btn-primary:not(:disabled):active{transform:scale(.97)}
+  .btn-primary:disabled{opacity:.38;cursor:not-allowed}
+  .btn-danger{background:var(--danger);color:#fff}
+  .btn-danger:not(:disabled):hover{background:var(--danger-hover)}
+  .btn-danger:not(:disabled):active{transform:scale(.97)}
+
+  .top-actions{display:flex;align-items:center;gap:4px;flex-wrap:wrap;justify-content:flex-end}
+  .top-actions .btn{height:36px;padding:0 10px;font-size:13px}
+  .content{position:relative;z-index:1;max-width:1080px;margin:0 auto;padding:34px 24px 40px}
+  .section-head{display:flex;align-items:baseline;gap:10px;margin-bottom:18px}
+  .section-head h1{margin:0;font-size:20px;font-weight:600;letter-spacing:-.025em}
+  .count{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums}
+
+  .grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,232px),1fr));gap:16px}
+
+  .calc-card{
+    position:relative;isolation:isolate;
+    display:flex;flex-direction:column;
+    padding:18px 18px 20px;
+    min-height:162px;
+    text-align:left;
+    border-radius:26px 26px 26px 8px;
+    background:var(--card-bg,linear-gradient(150deg,#fff,#f6efe7));
+    border:1px solid rgba(120,80,50,.08);
+    box-shadow:
+      0 1px 0 rgba(255,255,255,.85) inset,
+      0 12px 30px -22px rgba(90,55,25,.45);
+    overflow:hidden;
+    transition:transform .38s cubic-bezier(.2,.8,.25,1),box-shadow .38s ease;
+    will-change:transform;
+  }
+  .calc-card::before{
+    content:"";
+    position:absolute;inset:-40%;
+    background:linear-gradient(115deg,transparent 38%,rgba(255,255,255,.6) 50%,transparent 62%);
+    transform:translateX(-100%);
+    transition:transform .85s cubic-bezier(.2,.8,.3,1);
+    pointer-events:none;z-index:2;
+  }
+  .calc-card::after{
+    content:"";
+    position:absolute;right:-36px;top:-36px;
+    width:130px;height:130px;border-radius:50%;
+    background:radial-gradient(circle,rgba(180,86,46,.20),transparent 70%);
+    filter:blur(4px);
+    transition:transform .6s cubic-bezier(.2,.8,.3,1);
+    pointer-events:none;z-index:0;
+  }
+  .calc-card:hover{
+    transform:translateY(-4px);
+    box-shadow:
+      0 1px 0 rgba(255,255,255,.9) inset,
+      0 22px 44px -24px rgba(90,55,25,.55);
+  }
+  .calc-card:hover::before{transform:translateX(100%)}
+  .calc-card:hover::after{transform:scale(1.25) translate(-8px,8px)}
+  .calc-card:active{transform:translateY(-1px) scale(.994)}
+
+  .fold{
+    position:absolute;right:0;bottom:0;
+    width:28px;height:28px;
+    background:linear-gradient(135deg,transparent 49%,rgba(180,86,46,.16) 50%);
+    border-bottom-right-radius:8px;
+    pointer-events:none;z-index:1;
+  }
+
+  .cc-head{position:relative;z-index:3;display:flex;align-items:center;justify-content:space-between;gap:8px}
+  .cc-badge{
+    display:grid;place-items:center;
+    width:32px;height:32px;flex:none;
+    border-radius:10px;
+    background:rgba(255,255,255,.72);
+    color:var(--accent);
+    box-shadow:0 1px 0 rgba(255,255,255,.9) inset;
+    transition:transform .45s cubic-bezier(.2,.9,.25,1);
+  }
+  .calc-card:hover .cc-badge{transform:rotate(-8deg) scale(1.06)}
+  .cc-badge svg{width:17px;height:17px}
+  .cc-count{font-size:12px;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
+
+  .cc-name{
+    position:relative;z-index:3;
+    margin-top:14px;
+    font-size:15.5px;font-weight:650;line-height:1.3;letter-spacing:-.012em;
+    overflow:hidden;text-overflow:ellipsis;display:-webkit-box;
+    -webkit-line-clamp:2;-webkit-box-orient:vertical;
+  }
+  .cc-sum{
+    position:relative;z-index:3;
+    margin-top:auto;padding-top:14px;
+    font-size:21px;font-weight:650;letter-spacing:-.03em;
+    font-variant-numeric:tabular-nums;
+  }
+
+  .add-card{
+    position:relative;
+    display:flex;flex-direction:column;align-items:center;justify-content:center;gap:12px;
+    min-height:162px;
+    border-radius:26px 26px 26px 8px;
+    border:1.5px dashed #D9CFC2;
+    background:rgba(255,255,255,.34);
+    color:var(--muted);
+    font-size:14px;font-weight:500;
+    transition:border-color .3s ease,color .3s ease,background .3s ease,transform .2s ease;
+  }
+  .add-card svg{width:24px;height:24px;transition:transform .45s cubic-bezier(.2,.9,.25,1)}
+  .add-card:hover{border-color:var(--accent);color:var(--accent);background:var(--accent-soft)}
+  .add-card:hover svg{transform:rotate(90deg) scale(1.12)}
+  .add-card:active{transform:scale(.985)}
+
+  .overlay,.picker-layer{
+    position:fixed;z-index:100;
+    left:0;right:0;
+    top:var(--app-top,0px);
+    height:var(--app-height,100dvh);
+    display:flex;align-items:center;justify-content:center;
+    padding:24px;
+    background:rgba(32,24,17,.34);
+    backdrop-filter:blur(4px);
+    -webkit-backdrop-filter:blur(4px);
+    opacity:0;visibility:hidden;
+    transition:opacity .3s ease,visibility 0s linear .3s;
+  }
+  .overlay.open,.picker-layer.open{
+    opacity:1;visibility:visible;
+    transition:opacity .3s ease,visibility 0s linear 0s;
+  }
+  .overlay:not(.open),.picker-layer:not(.open){pointer-events:none}
+  .overlay.center{align-items:center;padding:24px}
+  #iconOverlay{z-index:200}
+  .picker-layer{z-index:250;align-items:flex-end;padding:0}
+  #dbOverlay{z-index:300}
+  #confirmOverlay{z-index:400}
+
+  .modal{
+    position:relative;
+    width:100%;max-width:560px;
+    max-height:calc(var(--app-height,100dvh) - 48px);
+    display:flex;flex-direction:column;
+    background:var(--surface);
+    border-radius:22px;
+    box-shadow:0 30px 80px -26px rgba(45,30,18,.5);
+    opacity:0;
+    transform:translateY(22px) scale(.96);
+    transition:transform .46s cubic-bezier(.2,.9,.25,1),opacity .3s ease;
+    overflow:hidden;
+  }
+  .overlay.open .modal{opacity:1;transform:none}
+  .modal-lg{max-width:720px}
+
+  .grip{
+    width:38px;height:4px;border-radius:99px;background:#DCD4C9;
+    margin:8px auto 0;flex:none;
+    display:none;
+  }
+
+  .modal-head{
+    display:flex;align-items:center;gap:12px;
+    padding:16px 18px 14px;
+    border-bottom:1px solid var(--border);
+    flex:none;
+  }
+  .modal-title{margin:0;flex:1;font-size:17px;font-weight:600;letter-spacing:-.015em}
+
+  .title-input{
+    flex:1;min-width:0;
+    padding:4px 0;
+    border:none;outline:none;background:none;
+    font-size:18px;font-weight:600;letter-spacing:-.02em;
+  }
+  .title-input::placeholder{color:#B7AFA5;font-weight:500}
+
+  .icon-btn{
+    display:grid;place-items:center;
+    width:36px;height:36px;flex:none;
+    border-radius:11px;
+    color:var(--muted);
+    transition:background .16s ease,color .16s ease,transform .12s ease;
+  }
+  .icon-btn:hover{background:#F1ECE5;color:var(--text)}
+  .icon-btn:active{transform:scale(.94)}
+  .icon-btn svg{width:18px;height:18px}
+
+  .icon-btn.icon-trigger{
+    width:38px;height:38px;
+    background:var(--accent-soft);
+    color:var(--accent);
+  }
+  .icon-btn.icon-trigger:hover{background:#F5DCCC;color:var(--accent)}
+  .icon-btn.icon-trigger svg{width:20px;height:20px}
+
+  .icon-btn.danger-hover:hover{background:var(--danger-soft);color:var(--danger)}
+
+  .modal-body{
+    flex:1;
+    padding:16px 18px 18px;
+    overflow-y:auto;
+    -webkit-overflow-scrolling:touch;
+    overscroll-behavior:contain;
+    scroll-padding-block:16px;
+  }
+  .modal-body::-webkit-scrollbar{width:10px}
+  .modal-body::-webkit-scrollbar-track{background:transparent}
+  .modal-body::-webkit-scrollbar-thumb{background:#E3DCD3;border-radius:10px;border:3px solid #fff}
+
+  .modal-foot{
+    display:flex;align-items:center;justify-content:space-between;gap:16px;
+    padding:14px 18px;
+    padding-bottom:calc(14px + env(safe-area-inset-bottom));
+    border-top:1px solid var(--border);
+    background:#FCFAF7;
+    flex:none;
+  }
+  .modal-foot.confirm-foot{justify-content:flex-end;gap:10px;background:#FCFAF7}
+
+  .foot-label{font-size:12px;color:var(--muted);letter-spacing:.02em;text-transform:uppercase}
+  .foot-total{font-size:23px;font-weight:650;letter-spacing:-.03em;font-variant-numeric:tabular-nums;margin-top:2px}
+  .foot-total.pulse{animation:pulseTotal .45s cubic-bezier(.2,.9,.25,1)}
+  @keyframes pulseTotal{
+    0%,100%{transform:scale(1)}
+    40%{transform:scale(1.045);color:var(--accent)}
+  }
+
+  .confirm-text{margin:0;font-size:14.5px;color:var(--muted);line-height:1.55}
+
+  .row{
+    display:grid;
+    grid-template-columns:minmax(0,1fr) 92px minmax(74px,auto) 30px;
+    gap:8px;align-items:center;
+    padding:6px 0;
+  }
+  .picker{
+    display:flex;align-items:center;justify-content:space-between;gap:6px;
+    min-width:0;height:38px;
+    padding:0 8px 0 11px;
+    border:1px solid var(--border);
+    border-radius:10px;
+    background:#FCFBF9;
+    font-size:14px;text-align:left;
+    transition:border-color .16s ease,background .16s ease;
+  }
+  .picker:hover{border-color:#D8D0C5;background:#fff}
+  .picker[aria-expanded="true"]{border-color:var(--accent);background:#fff}
+  .picker-txt{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .picker-txt.ph{color:#AAA198}
+  .picker svg{width:14px;height:14px;flex:none;color:#BCB3A9}
+
+  .qty-wrap{
+    display:flex;align-items:center;
+    height:38px;padding-right:8px;
+    border:1px solid var(--border);
+    border-radius:10px;
+    background:#FCFBF9;
+    transition:border-color .16s ease,background .16s ease,box-shadow .16s ease;
+  }
+  .qty-wrap:focus-within{border-color:var(--accent);background:#fff;box-shadow:0 0 0 3px rgba(180,86,46,.1)}
+  .qty-wrap input{
+    width:100%;min-width:0;
+    padding:0 2px 0 10px;
+    border:none;outline:none;background:none;
+    font-size:14px;font-variant-numeric:tabular-nums;
+  }
+  .qty-wrap .unit{font-size:12px;color:var(--muted);flex:none}
+
+  .row-cost{
+    font-size:14px;text-align:right;white-space:nowrap;
+    font-variant-numeric:tabular-nums;
+  }
+
+  .row-del{
+    display:grid;place-items:center;
+    width:30px;height:30px;
+    border-radius:9px;
+    color:#C3BAB0;
+    transition:background .16s ease,color .16s ease;
+  }
+  .row-del:hover{background:var(--danger-soft);color:var(--danger)}
+  .row-del svg{width:15px;height:15px}
+
+  .add-row{
+    display:flex;align-items:center;gap:8px;
+    margin-top:10px;padding:10px 12px;
+    border-radius:11px;
+    font-size:14px;font-weight:500;
+    color:var(--accent);
+    transition:background .16s ease;
+  }
+  .add-row:hover{background:var(--accent-soft)}
+  .add-row svg{width:16px;height:16px}
+
+  /* форма продукта */
+  .pf{
+    display:grid;gap:8px;
+    padding:14px;
+    margin-bottom:14px;
+    background:#F9F6F2;
+    border-radius:16px;
+    transition:background .25s ease,box-shadow .25s ease;
+  }
+  .pf.editing{
+    background:#FAF3EB;
+    box-shadow:0 0 0 1.5px rgba(180,86,46,.18) inset;
+  }
+  .pf-edit-head{
+    display:none;
+    align-items:center;justify-content:space-between;gap:10px;
+    padding-bottom:8px;
+    border-bottom:1px solid var(--border);
+  }
+  .pf.editing .pf-edit-head{display:flex}
+  .pf-edit-label{
+    font-size:13px;font-weight:600;color:var(--accent);letter-spacing:-.01em;
+    overflow:hidden;text-overflow:ellipsis;white-space:nowrap;
+  }
+  .pf-cancel{
+    font-size:13px;font-weight:500;color:var(--accent);
+    padding:5px 11px;border-radius:8px;
+    transition:background .16s ease;
+    flex:none;
+  }
+  .pf-cancel:hover{background:rgba(180,86,46,.1)}
+
+  .pf-row{
+    display:grid;
+    grid-template-columns:84px 100px minmax(0,1fr) 40px;
+    gap:8px;align-items:center;
+  }
+  .inp{
+    height:40px;min-width:0;
+    padding:0 11px;
+    border:1px solid var(--border);
+    border-radius:10px;
+    background:#fff;
+    outline:none;
+    font-size:14px;
+    transition:border-color .16s ease,box-shadow .16s ease;
+  }
+  .inp::placeholder{color:#B7AFA5}
+  .inp:focus{border-color:var(--accent);box-shadow:0 0 0 3px rgba(180,86,46,.1)}
+  .pf-add{width:40px;height:40px;padding:0;display:grid;place-items:center}
+  .pf-add svg{width:16px;height:16px}
+
+  .unit-select{
+    appearance:none;
+    -webkit-appearance:none;
+    background-image:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 24 24' fill='none' stroke='%238A7F73' stroke-width='2' stroke-linecap='round' stroke-linejoin='round'><path d='m6 9 6 6 6-6'/></svg>");
+    background-repeat:no-repeat;
+    background-position:right 10px center;
+    background-size:14px;
+    padding-right:28px;
+    cursor:pointer;
+  }
+
+  /* список продуктов */
+  .prod{
+    display:flex;align-items:center;gap:6px;
+    padding:11px 2px;
+    border-bottom:1px solid #F2EDE6;
+    animation:fadeIn .24s ease both;
+    transition:background .2s ease;
+    border-radius:8px;
+  }
+  .prod:last-child{border-bottom:none}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(-4px)}to{opacity:1;transform:none}}
+  .prod.is-editing{background:var(--accent-soft)}
+  .prod-main{flex:1;min-width:0;padding:0 4px}
+  .prod-name{font-size:14px;font-weight:500;overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .prod-meta{font-size:12px;color:var(--muted);font-variant-numeric:tabular-nums;margin-top:1px}
+
+  .prod-btn{
+    display:grid;place-items:center;
+    width:32px;height:32px;flex:none;
+    border-radius:9px;
+    color:#BCB3A9;
+    transition:background .16s ease,color .16s ease;
+  }
+  .prod-btn svg{width:15px;height:15px}
+  .prod-edit:hover{background:var(--accent-soft);color:var(--accent)}
+  .prod-del:hover{background:var(--danger-soft);color:var(--danger)}
+
+  /* общий список */
+  .dd-l{overflow-y:auto;padding:5px;flex:1;min-height:0}
+  .dd-l::-webkit-scrollbar{width:9px}
+  .dd-l::-webkit-scrollbar-thumb{background:#E3DCD3;border-radius:10px;border:3px solid #fff}
+  .dd-i{
+    display:flex;align-items:center;justify-content:space-between;gap:10px;
+    width:100%;padding:9px 10px;
+    border-radius:9px;
+    font-size:14px;text-align:left;
+    transition:background .12s ease;
+  }
+  .dd-i:hover,.dd-i:focus-visible{background:#F5F1EB;outline:none}
+  .dd-n{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+  .dd-p{flex:none;font-size:12px;color:var(--muted);white-space:nowrap;font-variant-numeric:tabular-nums}
+  .dd-empty{padding:22px 12px;text-align:center;font-size:13px;color:var(--muted)}
+  .dd-add{
+    display:flex;align-items:center;gap:7px;
+    padding:12px 13px;
+    border-top:1px solid var(--border);
+    font-size:13px;font-weight:500;color:var(--accent);
+    transition:background .14s ease;
+    flex:none;
+  }
+  .dd-add:hover{background:var(--accent-soft)}
+  .dd-add svg{width:14px;height:14px}
+
+  .dd{
+    position:fixed;z-index:260;
+    display:flex;flex-direction:column;
+    max-height:320px;
+    background:#fff;
+    border:1px solid var(--border);
+    border-radius:14px;
+    box-shadow:0 20px 50px -16px rgba(45,30,18,.36);
+    overflow:hidden;
+    animation:ddIn .18s cubic-bezier(.2,.9,.3,1) both;
+  }
+  @keyframes ddIn{from{opacity:0;transform:translateY(-6px)}to{opacity:1;transform:none}}
+
+  .picker-sheet{
+    position:relative;
+    display:flex;flex-direction:column;
+    width:100%;
+    max-height:min(72%,640px);
+    background:#fff;
+    border-radius:24px 24px 0 0;
+    box-shadow:0 -26px 64px -26px rgba(45,30,18,.5);
+    transform:translateY(101%);
+    transition:transform .46s cubic-bezier(.2,.9,.25,1);
+    padding-bottom:env(safe-area-inset-bottom);
+    overflow:hidden;
+  }
+  .picker-layer.open .picker-sheet{transform:none}
+  .picker-sheet .dd-l{padding:2px 10px 6px}
+  .picker-sheet .dd-i{padding:13px 10px;font-size:15px}
+  .picker-sheet .dd-add{
+    margin:4px 14px 12px;
+    border:1px solid #F1E2D5;
+    border-radius:12px;
+    background:var(--accent-soft);
+    justify-content:center;
+    padding:13px;
+    font-size:14px;
+  }
+
+  /* иконки */
+  .icon-grid{
+    display:grid;
+    grid-template-columns:repeat(5,1fr);
+    gap:8px;
+  }
+  .icon-opt{
+    aspect-ratio:1;
+    display:grid;place-items:center;
+    border:1.5px solid var(--border);
+    border-radius:12px;
+    background:#FCFBF9;
+    color:var(--text);
+    transition:border-color .16s ease,background .16s ease,color .16s ease,transform .12s ease,box-shadow .16s ease;
+  }
+  .icon-opt:hover{border-color:#D8D0C5;background:#fff}
+  .icon-opt:active{transform:scale(.95)}
+  .icon-opt.active{
+    border-color:var(--accent);
+    background:var(--accent-soft);
+    color:var(--accent);
+    box-shadow:0 0 0 3px rgba(180,86,46,.1);
+  }
+  .icon-opt svg{width:22px;height:22px}
+
+  /* описание */
+  .info{
+    position:relative;z-index:1;
+    max-width:1080px;margin:0 auto;
+    padding:56px 24px 0;
+  }
+  .info-inner{border-top:1px solid var(--border);padding-top:40px}
+  .info h2{margin:0 0 6px;font-size:20px;font-weight:600;letter-spacing:-.025em}
+  .info .lead{margin:0 0 26px;max-width:64ch;color:var(--muted);font-size:14.5px}
+  .info-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,240px),1fr));gap:14px}
+  .info-card{
+    position:relative;
+    padding:20px;
+    border-radius:22px 22px 22px 8px;
+    background:rgba(255,255,255,.62);
+    border:1px solid rgba(255,255,255,.85);
+    box-shadow:
+      0 1px 0 rgba(255,255,255,.9) inset,
+      0 16px 36px -30px rgba(90,55,25,.6);
+    backdrop-filter:blur(8px);
+    -webkit-backdrop-filter:blur(8px);
+  }
+  .info-num{
+    display:inline-block;
+    font-size:11px;font-weight:650;letter-spacing:.1em;text-transform:uppercase;
+    color:var(--accent);
+  }
+  .info-card h3{margin:8px 0 6px;font-size:15px;font-weight:600;letter-spacing:-.01em}
+  .info-card p{margin:0;font-size:14px;color:var(--muted);line-height:1.5}
+  .formula{
+    display:inline-block;margin-top:10px;
+    padding:8px 12px;
+    border-radius:10px;
+    background:#FBF6F0;
+    border:1px dashed #E3D6C7;
+    font-size:13px;color:var(--text);
+    font-variant-numeric:tabular-nums;
+  }
+
+  .footer{
+    position:relative;z-index:1;
+    max-width:1080px;margin:0 auto;
+    padding:36px 24px calc(28px + env(safe-area-inset-bottom));
+    display:flex;align-items:center;justify-content:space-between;gap:14px;flex-wrap:wrap;
+    font-size:13px;color:var(--muted);
+  }
+  .footer .f-brand{display:flex;align-items:center;gap:8px;font-weight:500;color:var(--text)}
+  .footer .f-brand svg{width:18px;height:18px;color:var(--accent)}
+
+  @media (max-width:900px){
+    .content{padding:28px 20px 32px}
+    .info{padding:44px 20px 0}
+    .footer{padding-left:20px;padding-right:20px}
+  }
+
+  @media (max-width:640px){
+    .brand span{display:none}
+    .topbar{padding:10px 12px;padding-top:calc(10px + env(safe-area-inset-top));gap:8px}
+    .brand span{font-size:13px}
+    .top-actions{gap:2px}
+    .top-actions .btn{height:34px;padding:0 7px;font-size:12px}
+    .content{padding:22px 16px 28px}
+    .info{padding:38px 16px 0}
+    .footer{padding:28px 16px calc(22px + env(safe-area-inset-bottom))}
+
+    .section-head h1{font-size:18px}
+    .grid{gap:12px}
+    .calc-card,.add-card{min-height:146px;border-radius:24px 24px 24px 8px}
+    .cc-sum{font-size:19px}
+
+    .overlay{align-items:flex-end;padding:0}
+    .overlay.center{align-items:center;padding:20px}
+    .modal{
+      max-width:100%;
+      max-height:calc(var(--app-height,100dvh) - 10px);
+      border-radius:24px 24px 0 0;
+      transform:translateY(100%);
+      transition:transform .46s cubic-bezier(.2,.9,.25,1);
+    }
+    .overlay.open .modal{transform:translateY(0)}
+    .overlay.center .modal{
+      max-width:100%;
+      max-height:calc(var(--app-height,100dvh) - 40px);
+      border-radius:22px;
+      transform:translateY(14px) scale(.96);
+    }
+    .overlay.center.open .modal{transform:none}
+    .overlay.center .grip{display:none}
+    .modal-lg{max-width:100%}
+    .grip{display:block}
+    .modal-head{padding:8px 16px 12px}
+    .modal-body{padding:14px 16px 16px}
+    .modal-foot{padding:12px 16px;padding-bottom:calc(12px + env(safe-area-inset-bottom))}
+    .title-input{font-size:17px}
+    .foot-total{font-size:21px}
+
+    .inp,.qty-wrap input,.title-input{font-size:16px}
+    .inp,.pf-add,.qty-wrap,.picker{height:44px}
+    .pf{padding:12px;gap:8px}
+
+    .pf-row{
+      grid-template-columns:1fr 1fr;
+      grid-template-areas:
+        "qty unit"
+        "price add";
+    }
+    #pfQty{grid-area:qty}
+    #pfUnit{grid-area:unit}
+    #pfPrice{grid-area:price}
+    .pf-add{grid-area:add;width:100%;height:44px}
+
+    .row{
+      grid-template-columns:minmax(0,1fr) auto auto;
+      grid-template-areas:
+        "pick pick pick"
+        "qty  cost del";
+      gap:8px;
+      padding:12px 0;
+      border-bottom:1px solid #F2EDE6;
+    }
+    .row:last-child{border-bottom:none}
+    .row .picker{grid-area:pick}
+    .row .qty-wrap{grid-area:qty}
+    .row .row-cost{grid-area:cost;align-self:center;font-size:14px;padding:0 4px}
+    .row .row-del{grid-area:del;width:34px;height:34px}
+    .add-row{margin-top:6px;padding:12px}
+
+    .picker{height:44px;font-size:15px}
+
+    .orb{filter:blur(38px);opacity:.5}
+    .o1{width:260px;height:260px}
+    .o2{width:300px;height:300px}
+    .o3{width:240px;height:240px}
+    .r1{width:170px;height:170px}
+    .r2{width:110px;height:110px}
+
+    .info h2{font-size:18px}
+    .info-card{padding:18px}
+  }
+
+  @media (max-width:400px){
+    .grid{grid-template-columns:1fr}
+    .cc-name{font-size:15px}
+  }
+
+  @media (max-width:360px){
+    .icon-grid{grid-template-columns:repeat(4,1fr)}
+  }
+
+  @media (prefers-reduced-motion:reduce){
+    *,*::before,*::after{
+      animation-duration:.001ms !important;
+      animation-iteration-count:1 !important;
+      transition-duration:.001ms !important;
+    }
+  }
+</style>
+</head>
+<body>
+
+<div class="bg-decor" aria-hidden="true">
+  <span class="orb o1"></span>
+  <span class="orb o2"></span>
+  <span class="orb o3"></span>
+  <span class="ring r1"></span>
+  <span class="ring r2"></span>
+</div>
+
+<header class="topbar">
+  <div class="brand">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8"/>
+      <path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2-1 2-1"/>
+      <path d="M2 21h20"/><path d="M7 8v3"/><path d="M12 8v3"/><path d="M17 8v3"/>
+      <path d="M7 4h.01"/><path d="M12 4h.01"/><path d="M17 4h.01"/>
+    </svg>
+    <span>Калькулятор кондитера</span>
+  </div>
+  <div class="top-actions">
+  <button class="btn btn-ghost" id="exportDataBtn" type="button" title="Экспорт резервной копии" aria-label="Экспорт резервной копии">Экспорт</button>
+  <button class="btn btn-ghost" id="importDataBtn" type="button" title="Импорт резервной копии" aria-label="Импорт резервной копии">Импорт</button>
+  <input id="importDataFile" type="file" accept="application/json,.json" hidden>
+  <button class="btn btn-ghost" id="openDbBtn" type="button">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <ellipse cx="12" cy="5" rx="9" ry="3"/>
+      <path d="M3 5v14a9 3 0 0 0 18 0V5"/>
+      <path d="M3 12a9 3 0 0 0 18 0"/>
+    </svg>
+    <span>База продуктов</span>
+  </button>
+  </div>
+</header>
+
+<main class="content">
+  <div class="section-head">
+    <h1>Калькуляторы</h1>
+    <span class="count" id="calcCount"></span>
+  </div>
+  <div class="grid" id="calcGrid"></div>
+</main>
+
+<section class="info" aria-labelledby="infoTitle">
+  <div class="info-inner">
+    <h2 id="infoTitle">Как это работает и как считается себестоимость</h2>
+    <p class="lead">
+      Приложение хранит вашу базу продуктов, упаковки и декора и помогает собирать из них
+      калькуляторы бенто-тортов. Все расчёты выполняются мгновенно, а данные сохраняются
+      в браузере — возвращаться и заново вводить ничего не нужно.
+    </p>
+
+    <div class="info-grid">
+      <div class="info-card">
+        <span class="info-num">Шаг 1</span>
+        <h3>Стоимость единицы</h3>
+        <p>Для каждой позиции базы вы указываете цену упаковки и её объём в граммах, миллилитрах или других единицах. Система сама переводит это в стоимость за одну единицу.</p>
+        <div class="formula">цена упаковки ÷ количество в упаковке</div>
+      </div>
+
+      <div class="info-card">
+        <span class="info-num">Шаг 2</span>
+        <h3>Стоимость позиции</h3>
+        <p>В калькуляторе вы выбираете продукт и вводите нужное количество. Единицы измерения можно смешивать: граммы, миллилитры, штуки и ложки считаются в одном торте одновременно.</p>
+        <div class="formula">стоимость единицы × использованное количество</div>
+      </div>
+
+      <div class="info-card">
+        <span class="info-num">Шаг 3</span>
+        <h3>Итоговая себестоимость</h3>
+        <p>Стоимость всех строк складывается, и внизу калькулятора сразу виден итог. Он пересчитывается при каждом изменении — без кнопки «рассчитать».</p>
+        <div class="formula">сумма стоимостей всех позиций</div>
+      </div>
+
+      <div class="info-card">
+        <span class="info-num">Валюта</span>
+        <h3>Белорусские рубли</h3>
+        <p>Все цены в базе и итоговые суммы отображаются в BYN. Стоимость за единицу может быть очень маленькой — например, доли копейки за грамм — и это нормально: точность сохраняется в расчётах.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <span class="f-brand">
+    <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M20 21v-8a2 2 0 0 0-2-2H6a2 2 0 0 0-2 2v8"/>
+      <path d="M4 16s.5-1 2-1 2.5 2 4 2 2.5-2 4-2 2.5 2 4 2 2-1 2-1"/>
+      <path d="M2 21h20"/>
+    </svg>
+    Калькулятор кондитера
+  </span>
+  <span>Все данные хранятся локально в вашем браузере</span>
+</footer>
+
+<div class="overlay" id="calcOverlay">
+  <div class="modal modal-lg" role="dialog" aria-modal="true" aria-label="Калькулятор">
+    <div class="grip" aria-hidden="true"></div>
+    <div class="modal-head">
+      <button class="icon-btn icon-trigger" id="calcIconBtn" type="button" aria-label="Выбрать иконку">
+        <span id="calcIconPreview"></span>
+      </button>
+      <input class="title-input" id="calcTitle" placeholder="Название калькулятора" autocomplete="off" enterkeyhint="done">
+      <button class="icon-btn danger-hover" id="calcDeleteBtn" type="button" aria-label="Удалить калькулятор">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M4 7h16"/>
+          <path d="M10 11v6M14 11v6"/>
+          <path d="M6 7l1 13a2 2 0 0 0 2 2h6a2 2 0 0 0 2-2l1-13"/>
+          <path d="M9 7V4a1 1 0 0 1 1-1h4a1 1 0 0 1 1 1v3"/>
+        </svg>
+      </button>
+      <button class="icon-btn" id="calcClose" type="button" aria-label="Закрыть">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div id="ingRows"></div>
+      <button class="add-row" id="addRowBtn" type="button">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+        Добавить позицию
+      </button>
+    </div>
+    <div class="modal-foot">
+      <div>
+        <div class="foot-label">Себестоимость</div>
+        <div class="foot-total" id="calcTotal">0,00 BYN</div>
+      </div>
+      <button class="btn btn-primary" id="calcDone" type="button">Готово</button>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="iconOverlay">
+  <div class="modal" style="max-width:520px" role="dialog" aria-modal="true" aria-label="Иконка">
+    <div class="grip" aria-hidden="true"></div>
+    <div class="modal-head">
+      <h2 class="modal-title">Иконка калькулятора</h2>
+      <button class="icon-btn" id="iconClose" type="button" aria-label="Закрыть">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="icon-grid" id="iconGrid"></div>
+    </div>
+  </div>
+</div>
+
+<div class="overlay" id="dbOverlay">
+  <div class="modal" role="dialog" aria-modal="true" aria-label="База продуктов">
+    <div class="grip" aria-hidden="true"></div>
+    <div class="modal-head">
+      <h2 class="modal-title">База продуктов</h2>
+      <button class="icon-btn" id="dbClose" type="button" aria-label="Закрыть">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>
+      </button>
+    </div>
+    <div class="modal-body">
+      <div class="pf" id="pfWrap">
+        <div class="pf-edit-head">
+          <span class="pf-edit-label" id="pfEditLabel">Редактирование</span>
+          <button class="pf-cancel" id="pfCancel" type="button">Отмена</button>
+        </div>
+        <input class="inp" id="pfName" placeholder="Название продукта" autocomplete="off" enterkeyhint="next">
+        <div class="pf-row">
+          <input class="inp" id="pfQty" type="number" min="0" step="any" inputmode="decimal" placeholder="Кол-во" enterkeyhint="next">
+          <select class="inp unit-select" id="pfUnit" aria-label="Единица измерения"></select>
+          <input class="inp" id="pfPrice" type="number" min="0" step="any" inputmode="decimal" placeholder="Цена, BYN" enterkeyhint="done">
+          <button class="btn btn-primary pf-add" id="pfAdd" type="button" disabled aria-label="Добавить">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
+          </button>
+        </div>
+      </div>
+      <div id="prodList"></div>
+    </div>
+  </div>
+</div>
+
+<div class="overlay center" id="confirmOverlay">
+  <div class="modal" style="max-width:400px" role="dialog" aria-modal="true" aria-label="Подтверждение">
+    <div class="grip" aria-hidden="true"></div>
+    <div class="modal-head">
+      <h2 class="modal-title" id="confirmTitle">Подтверждение</h2>
+    </div>
+    <div class="modal-body">
+      <p class="confirm-text" id="confirmText"></p>
+    </div>
+    <div class="modal-foot confirm-foot">
+      <button class="btn btn-ghost" id="confirmCancel" type="button">Отмена</button>
+      <button class="btn btn-danger" id="confirmOk" type="button">Удалить</button>
+    </div>
+  </div>
+</div>
+
+<script type="module">
+import { calculateUnitCost, calculateTotal, validateBackup } from "./src/domain.js";
+(function () {
+  'use strict';
+
+  const $ = (s, r) => (r || document).querySelector(s);
+  const uid = () => Math.random().toString(36).slice(2, 10) + Date.now().toString(36).slice(-3);
+  const nf = new Intl.NumberFormat('ru-RU', { minimumFractionDigits: 2, maximumFractionDigits: 2 });
+  const money = n => nf.format(n || 0) + ' BYN';
+  const num = v => { const n = parseFloat(v); return isFinite(n) ? n : 0; };
+  const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+  const isMobile = () => window.matchMedia('(max-width: 640px)').matches;
+
+  function pluralForm(n, forms) {
+    const m = n % 100, d = n % 10;
+    if (d === 1 && m !== 11) return forms[0];
+    if (d >= 2 && d <= 4 && (m < 10 || m >= 20)) return forms[1];
+    return forms[2];
+  }
+  const pluralItems = n => pluralForm(n, ['позиция', 'позиции', 'позиций']);
+  const pluralCalcs = n => pluralForm(n, ['калькуляторе', 'калькуляторах', 'калькуляторах']);
+
+  const UNITS = [
+    'г', 'кг', 'мг',
+    'мл', 'л',
+    'шт',
+    'ст. л.', 'ч. л.', 'дес. л.',
+    'стакан', 'чашка',
+    'щепотка', 'горсть', 'капля',
+    'упаковка', 'пачка', 'банка', 'коробка', 'рулон',
+    'порция', 'кусок', 'ломтик', 'долька', 'зубчик', 'пучок', 'лист'
+  ];
+
+  const ic = inner => '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round">' + inner + '</svg>';
+
+  const ICONS = {
+    'cake-sm': ic('<path d="M4 20h16"/><path d="M6 20v-5a2 2 0 0 1 2-2h8a2 2 0 0 1 2 2v5"/><path d="M12 13V9"/><path d="M10 9h4"/>'),
+    'cake-md': ic('<path d="M3 21h18"/><path d="M4 21v-6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v6"/><path d="M8 13V8a2 2 0 0 1 2-2h4a2 2 0 0 1 2 2v5"/><path d="M12 6V3"/><circle cx="12" cy="2.6" r=".9"/>'),
+    'cake-lg': ic('<path d="M2 21h20"/><path d="M3 21v-5a2 2 0 0 1 2-2h14a2 2 0 0 1 2 2v5"/><path d="M7 14V9a2 2 0 0 1 2-2h6a2 2 0 0 1 2 2v5"/><path d="M10 7V5a2 2 0 0 1 4 0v2"/>'),
+    'cupcake-sm': ic('<path d="M8 12h8l-1 7.5a1 1 0 0 1-1 .5h-4a1 1 0 0 1-1-.5L8 12z"/><path d="M8 12c0-2.8 1.8-5 4-5s4 2.2 4 5"/>'),
+    'cupcake-md': ic('<path d="M7 13h10l-1.2 7.5a1 1 0 0 1-1 .5h-5.6a1 1 0 0 1-1-.5L7 13z"/><path d="M7 13c0-3.3 2.2-6 5-6s5 2.7 5 6"/><path d="M12 7V4.5"/><circle cx="12" cy="3.4" r="1"/>'),
+    'cupcake-lg': ic('<path d="M6 14h12l-1.5 7a1 1 0 0 1-1 .8h-7a1 1 0 0 1-1-.8L6 14z"/><path d="M6 14c0-4.4 2.7-8 6-8s6 3.6 6 8"/><path d="M9 12V9.5M15 12V9.5"/>'),
+    'trifle-sm': ic('<path d="M8 3h8l-1 17.2a1 1 0 0 1-1 .8h-4a1 1 0 0 1-1-.8L8 3z"/><path d="M8.4 9h7.2"/><path d="M8.2 14h7.6"/>'),
+    'trifle-md': ic('<path d="M7 3h10l-1.2 17.2a1 1 0 0 1-1 .8H8.2a1 1 0 0 1-1-.8L7 3z"/><path d="M7.6 8h8.8"/><path d="M7.3 13h9.4"/><path d="M7.1 17h9.8"/>'),
+    'trifle-lg': ic('<path d="M6 5h12l-1.4 15.2a1 1 0 0 1-1 .8H8.4a1 1 0 0 1-1-.8L6 5z"/><path d="M5 5c0-1.1.9-2 2-2h10c1.1 0 2 .9 2 2"/><path d="M6.6 10h10.8"/><path d="M6.4 15h11.2"/>'),
+    'star': ic('<path d="M12 3l2.7 5.6 6.3.9-4.6 4.4 1.1 6.2L12 17.2 6.5 20.1l1.1-6.2L3 9.5l6.3-.9L12 3z"/>'),
+    'heart': ic('<path d="M12 20.5s-7.5-4.7-7.5-10a4.5 4.5 0 0 1 7.5-3.3A4.5 4.5 0 0 1 19.5 10.5c0 5.3-7.5 10-7.5 10z"/>'),
+    'flower': ic('<circle cx="12" cy="12" r="1.7"/><path d="M12 10.3c-.8-2-1-4 .5-4.5 1.3-.4 1.8 1.5 1.6 3.5"/><path d="M13.7 12c2-.8 4-1 4.5.5.4 1.3-1.5 1.8-3.5 1.6"/><path d="M12 13.7c.8 2 1 4-.5 4.5-1.3.4-1.8-1.5-1.6-3.5"/><path d="M10.3 12c-2 .8-4 1-4.5-.5-.4-1.3 1.5-1.8 3.5-1.6"/>'),
+    'cherry': ic('<path d="M12 3c-1.5 2.5-2.5 5-3 8"/><path d="M12 3c1.5 2.5 2.5 5 3 8"/><circle cx="9" cy="15" r="3"/><circle cx="15" cy="15" r="3"/>'),
+    'macaron': ic('<ellipse cx="12" cy="8" rx="8" ry="3"/><ellipse cx="12" cy="16" rx="8" ry="3"/><path d="M4 12h16"/>'),
+    'croissant': ic('<path d="M3 16c0-4 3-7 7-7h4c4 0 7 3 7 7"/><path d="M3 16c0 2 2 3.5 5 3.5 1.5 0 2.5-.8 4-.8s2.5.8 4 .8c3 0 5-1.5 5-3.5"/><path d="M8 12c.5 1.5 1 2 2 2.5"/><path d="M16 12c-.5 1.5-1 2-2 2.5"/>'),
+    'donut': ic('<circle cx="12" cy="12" r="8.5"/><circle cx="12" cy="12" r="3"/><path d="M7 7l1 1M16 7l1-1M17 16l1 1M7 17l1-1M12 3.5v1M12 19.5v1M3.5 12h1M19.5 12h1"/>'),
+    'pie': ic('<path d="M3 16h18"/><path d="M4 16c0-4.5 3.5-8 8-8s8 3.5 8 8"/><path d="M3 16l1.5 4h15l1.5-4"/><path d="M9 12l1.5 2M12 11l1.5 2M15 12l-1.5 2"/>'),
+    'icecream': ic('<path d="M8 10h8L12 20 8 10z"/><path d="M8 10c0-2.5 1.8-4.5 4-4.5s4 2 4 4.5"/><path d="M10 8l.5.5M14 8l-.5.5"/>'),
+    'chocolate': ic('<rect x="5" y="4" width="14" height="16" rx="1.5"/><path d="M5 9.3h14M5 14.6h14M9.6 4v16M14.3 4v16"/>'),
+    'coffee': ic('<path d="M4 9h12v5a4 4 0 0 1-4 4H8a4 4 0 0 1-4-4V9z"/><path d="M16 11h2a2 2 0 0 1 0 4h-2"/><path d="M7 6l.5-2M11 6l.5-2M9 6l.5-2"/>'),
+    'rollingpin': ic('<rect x="4" y="10" width="16" height="4" rx="1"/><rect x="1" y="11.3" width="3" height="1.4" rx=".5"/><rect x="20" y="11.3" width="3" height="1.4" rx=".5"/>'),
+    'whisk': ic('<path d="M12 3v18"/><path d="M9 21h6"/><path d="M12 6c-2 0-3.5 2-3.5 4.5S10 15 12 15s3.5-2 3.5-4.5S14 6 12 6z"/><path d="M12 6v9"/>'),
+    'scale': ic('<path d="M12 4v16"/><path d="M5 8h14"/><path d="M5 8l-2 4h4L5 8z"/><path d="M19 8l-2 4h4L19 8z"/><path d="M8 20h8"/>'),
+    'gift': ic('<rect x="3" y="9" width="18" height="12" rx="1"/><path d="M3 13h18"/><path d="M12 9v12"/><path d="M12 9C10 9 8 8 8 6.5S10 5 12 9z"/><path d="M12 9c2 0 4-1 4-2.5S14 5 12 9z"/>'),
+    'candle': ic('<rect x="9" y="9" width="6" height="12" rx="1"/><path d="M12 9V6"/><path d="M12 3c-1 1.2-1.5 2-1.5 3 0 .8.7 1.5 1.5 1.5s1.5-.7 1.5-1.5c0-1-.5-1.8-1.5-3z"/><path d="M6 21h12"/>')
+  };
+  const ICON_NAMES = {
+    'cake-sm': 'Торт S', 'cake-md': 'Торт M', 'cake-lg': 'Торт L',
+    'cupcake-sm': 'Капкейк S', 'cupcake-md': 'Капкейк M', 'cupcake-lg': 'Капкейк L',
+    'trifle-sm': 'Трайфл S', 'trifle-md': 'Трайфл M', 'trifle-lg': 'Трайфл L',
+    'star': 'Звезда', 'heart': 'Сердце', 'flower': 'Цветок', 'cherry': 'Вишня',
+    'macaron': 'Макарон', 'croissant': 'Круассан', 'donut': 'Пончик', 'pie': 'Пирог',
+    'icecream': 'Мороженое', 'chocolate': 'Шоколад', 'coffee': 'Кофе',
+    'rollingpin': 'Скалка', 'whisk': 'Венчик', 'scale': 'Весы',
+    'gift': 'Подарок', 'candle': 'Свеча'
+  };
+  const ICON_KEYS = Object.keys(ICONS);
+
+  const KEY = 'bento_cost_v3';
+  const OLD_KEY = 'bento_cost_v2';
+  let state = { products: [], calculators: [] };
+  let editing = null;
+  let editingProductId = null;
+  let pendingRow = null;
+  let picker = null;
+  let lastTotal = -1;
+  let pfUnit = 'г';
+
+  let vpRaf = null;
+  function applyViewport() {
+    const vv = window.visualViewport;
+    const h = vv ? vv.height : window.innerHeight;
+    const t = vv ? vv.offsetTop : 0;
+    const root = document.documentElement;
+    if (root.style.getPropertyValue('--app-height') !== h + 'px') {
+      root.style.setProperty('--app-height', h + 'px');
+    }
+    if (root.style.getPropertyValue('--app-top') !== t + 'px') {
+      root.style.setProperty('--app-top', t + 'px');
+    }
+  }
+  function syncViewport(immediate) {
+    if (immediate) { applyViewport(); return; }
+    if (vpRaf) return;
+    vpRaf = requestAnimationFrame(() => { vpRaf = null; applyViewport(); });
+  }
+  syncViewport(true);
+  if (window.visualViewport) {
+    window.visualViewport.addEventListener('resize', () => syncViewport(false));
+    window.visualViewport.addEventListener('scroll', () => syncViewport(false));
+  }
+  window.addEventListener('resize', () => syncViewport(false));
+  window.addEventListener('orientationchange', () => setTimeout(() => syncViewport(true), 150));
+
+  function updateBodyLock() {
+    const locked = !!document.querySelector('.overlay.open, .picker-layer.open');
+    document.body.classList.toggle('locked', locked);
+  }
+
+  function save() {
+    try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
+  }
+
+  function unitCost(p) { return calculateUnitCost(p); }
+
+  function calcTotal(c) { return calculateTotal(c, state.products); }
+
+  function normalizeCalc(c) {
+    if (!c.icon || !ICONS[c.icon]) c.icon = 'cake-md';
+    if (!Array.isArray(c.items)) c.items = [];
+    return c;
+  }
+
+  function init() {
+    try {
+      const raw = localStorage.getItem(KEY) || localStorage.getItem(OLD_KEY);
+      if (raw) {
+        const d = JSON.parse(raw);
+        if (d && Array.isArray(d.products) && Array.isArray(d.calculators)) {
+          state = d;
+          state.calculators.forEach(normalizeCalc);
+          return;
+        }
+      }
+    } catch (e) {}
+
+    const mk = (name, unit, packQty, packPrice) => ({ id: uid(), name, unit, packQty, packPrice });
+    state.products = [
+      mk('Мука пшеничная', 'г', 1000, 4.85),
+      mk('Сахар', 'г', 1000, 3.90),
+      mk('Яйцо куриное', 'шт', 10, 5.20),
+      mk('Молоко', 'мл', 1000, 2.65),
+      mk('Масло сливочное', 'г', 200, 9.40),
+      mk('Сливки 33%', 'мл', 500, 11.80),
+      mk('Какао', 'г', 100, 6.10),
+      mk('Коробка для бенто', 'шт', 1, 2.70),
+      mk('Свеча', 'шт', 1, 1.45)
+    ];
+
+    const byName = n => (state.products.find(p => p.name === n) || {}).id;
+    state.calculators = [{
+      id: uid(),
+      name: 'Бенто «Классика»',
+      icon: 'cake-md',
+      items: [
+        { productId: byName('Мука пшеничная'), qty: 120 },
+        { productId: byName('Сахар'), qty: 90 },
+        { productId: byName('Яйцо куриное'), qty: 2 },
+        { productId: byName('Сливки 33%'), qty: 150 },
+        { productId: byName('Коробка для бенто'), qty: 1 }
+      ]
+    }];
+    save();
+  }
+
+  const CARD_BGS = [
+    'linear-gradient(150deg,#FFF8F0 0%,#FFE2CB 100%)',
+    'linear-gradient(150deg,#FFF2F0 0%,#FAD7CB 100%)',
+    'linear-gradient(150deg,#FDF7EC 0%,#F2DFC0 100%)',
+    'linear-gradient(150deg,#F8F4EE 0%,#E9DDC8 100%)',
+    'linear-gradient(150deg,#FFF6EE 0%,#F6D2B6 100%)',
+    'linear-gradient(150deg,#FBF5F2 0%,#EED5C5 100%)'
+  ];
+
+  function renderGrid() {
+    const grid = $('#calcGrid');
+    let html = '';
+
+    for (let i = 0; i < state.calculators.length; i++) {
+      const c = state.calculators[i];
+      const bg = CARD_BGS[i % CARD_BGS.length];
+      const iconKey = (c.icon && ICONS[c.icon]) ? c.icon : 'cake-md';
+      html += '<button class="calc-card" data-id="' + c.id + '" type="button" style="--card-bg:' + bg + '">' +
+        '<span class="fold" aria-hidden="true"></span>' +
+        '<div class="cc-head">' +
+          '<span class="cc-badge">' + ICONS[iconKey] + '</span>' +
+          '<span class="cc-count">' + c.items.length + ' ' + pluralItems(c.items.length) + '</span>' +
+        '</div>' +
+        '<div class="cc-name">' + esc(c.name.trim() || 'Без названия') + '</div>' +
+        '<div class="cc-sum">' + money(calcTotal(c)) + '</div>' +
+      '</button>';
+    }
+
+    html += '<button class="add-card" type="button">' +
+      '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>' +
+      '<span>Новый калькулятор</span></button>';
+
+    grid.innerHTML = html;
+    $('#calcCount').textContent = state.calculators.length || '';
+  }
+
+  $('#calcGrid').addEventListener('click', e => {
+    const card = e.target.closest('.calc-card');
+    if (card) { openCalc(card.dataset.id); return; }
+    if (e.target.closest('.add-card')) openCalc(null);
+  });
+
+  function openOverlay(sel) {
+    $(sel).classList.add('open');
+    updateBodyLock();
+  }
+  function closeOverlay(sel) {
+    $(sel).classList.remove('open');
+    updateBodyLock();
+  }
+
+  function confirmDialog(opts) {
+    return new Promise(resolve => {
+      const ov = $('#confirmOverlay');
+      const okBtn = $('#confirmOk');
+      const cancelBtn = $('#confirmCancel');
+
+      $('#confirmTitle').textContent = opts.title || 'Подтверждение';
+      $('#confirmText').textContent = opts.text || '';
+      okBtn.textContent = opts.okText || 'Удалить';
+      okBtn.className = 'btn ' + (opts.danger === false ? 'btn-primary' : 'btn-danger');
+
+      const cleanup = result => {
+        ov.classList.remove('open');
+        updateBodyLock();
+        okBtn.removeEventListener('click', onOk);
+        cancelBtn.removeEventListener('click', onCancel);
+        ov.removeEventListener('mousedown', onBackdrop);
+        document.removeEventListener('keydown', onKey);
+        resolve(result);
+      };
+      const onOk = () => cleanup(true);
+      const onCancel = () => cleanup(false);
+      const onBackdrop = e => { if (e.target === ov) cleanup(false); };
+      const onKey = e => { if (e.key === 'Escape') cleanup(false); };
+
+      okBtn.addEventListener('click', onOk);
+      cancelBtn.addEventListener('click', onCancel);
+      ov.addEventListener('mousedown', onBackdrop);
+      document.addEventListener('keydown', onKey);
+
+      ov.classList.add('open');
+      updateBodyLock();
+      setTimeout(() => okBtn.focus(), 60);
+    });
+  }
+
+  function updateCalcIcon() {
+    const key = (editing && editing.icon && ICONS[editing.icon]) ? editing.icon : 'cake-md';
+    $('#calcIconPreview').innerHTML = ICONS[key];
+  }
+
+  function openCalc(id) {
+    closePicker();
+    let c;
+    if (id) {
+      c = state.calculators.find(x => x.id === id);
+      if (!c) return;
+    } else {
+      c = { id: uid(), name: '', icon: 'cake-md', items: [] };
+      state.calculators.push(c);
+      save();
+    }
+    normalizeCalc(c);
+    editing = c;
+    $('#calcTitle').value = c.name;
+    updateCalcIcon();
+    renderRows();
+    lastTotal = calcTotal(c);
+    $('#calcTotal').textContent = money(lastTotal);
+    openOverlay('#calcOverlay');
+    if (!id && !isMobile()) setTimeout(() => $('#calcTitle').focus(), 300);
+  }
+
+  function closeCalc() {
+    closePicker();
+    if (editing && !editing.name.trim() && editing.items.length === 0) {
+      state.calculators = state.calculators.filter(c => c.id !== editing.id);
+      save();
+    }
+    editing = null;
+    lastTotal = -1;
+    closeOverlay('#calcOverlay');
+    renderGrid();
+  }
+
+  function rowHTML(it, i) {
+    const p = state.products.find(x => x.id === it.productId);
+    const cost = p ? unitCost(p) * num(it.qty) : 0;
+    return '<div class="row" data-i="' + i + '">' +
+      '<button class="picker" data-act="pick" type="button" aria-expanded="false">' +
+        '<span class="picker-txt' + (p ? '' : ' ph') + '">' + (p ? esc(p.name) : 'Выбрать продукт') + '</span>' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>' +
+      '</button>' +
+      '<label class="qty-wrap">' +
+        '<input class="qty" type="number" min="0" step="any" inputmode="decimal" value="' + (it.qty || '') + '" placeholder="0" enterkeyhint="done">' +
+        '<span class="unit">' + (p ? p.unit : '') + '</span>' +
+      '</label>' +
+      '<span class="row-cost">' + money(cost) + '</span>' +
+      '<button class="row-del" data-act="del" type="button" aria-label="Удалить">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>' +
+      '</button>' +
+    '</div>';
+  }
+
+  function renderRows() {
+    if (!editing) return;
+    const wrap = $('#ingRows');
+    let html = '';
+    for (let i = 0; i < editing.items.length; i++) html += rowHTML(editing.items[i], i);
+    wrap.innerHTML = html;
+  }
+
+  function updateTotal(silent) {
+    if (!editing) return;
+    const t = calcTotal(editing);
+    const el = $('#calcTotal');
+    el.textContent = money(t);
+    if (!silent && lastTotal >= 0 && Math.abs(t - lastTotal) > 0.001) {
+      el.classList.remove('pulse');
+      void el.offsetWidth;
+      el.classList.add('pulse');
+    }
+    lastTotal = t;
+  }
+
+  function chooseProduct(index, productId) {
+    if (!editing) return;
+    editing.items[index].productId = productId;
+    renderRows();
+    updateTotal();
+    save();
+    if (!isMobile()) {
+      const q = $('#ingRows').querySelector('.row[data-i="' + index + '"] .qty');
+      if (q) q.focus();
+    }
+  }
+
+  $('#addRowBtn').addEventListener('click', () => {
+    if (!editing) return;
+    editing.items.push({ productId: null, qty: 0 });
+    renderRows();
+    save();
+    const rows = $('#ingRows').children;
+    const last = rows[rows.length - 1];
+    if (last) last.querySelector('.picker').click();
+  });
+
+  $('#ingRows').addEventListener('click', e => {
+    const row = e.target.closest('.row');
+    if (!row) return;
+    const act = e.target.closest('[data-act]');
+    if (!act) return;
+    const i = +row.dataset.i;
+
+    if (act.dataset.act === 'pick') {
+      openPicker(row, i);
+    } else if (act.dataset.act === 'del') {
+      editing.items.splice(i, 1);
+      renderRows();
+      updateTotal();
+      save();
+    }
+  });
+
+  $('#ingRows').addEventListener('input', e => {
+    if (!e.target.classList.contains('qty')) return;
+    const row = e.target.closest('.row');
+    const i = +row.dataset.i;
+    const val = Math.max(0, num(e.target.value));
+    editing.items[i].qty = val;
+
+    const p = state.products.find(x => x.id === editing.items[i].productId);
+    row.querySelector('.row-cost').textContent = money(p ? unitCost(p) * val : 0);
+
+    updateTotal();
+    save();
+  });
+
+  $('#ingRows').addEventListener('keydown', e => {
+    if (e.key === 'Enter' && e.target.classList.contains('qty')) {
+      e.preventDefault();
+      e.target.blur();
+    }
+  });
+
+  $('#calcTitle').addEventListener('input', e => {
+    if (!editing) return;
+    editing.name = e.target.value;
+    save();
+  });
+  $('#calcTitle').addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); e.target.blur(); }
+  });
+
+  $('#calcClose').addEventListener('click', closeCalc);
+  $('#calcDone').addEventListener('click', closeCalc);
+
+  $('#calcDeleteBtn').addEventListener('click', async () => {
+    if (!editing) return;
+    const name = editing.name.trim() || 'Без названия';
+    const cnt = editing.items.length;
+    const itemText = cnt === 0 ? 'Калькулятор пуст.' : 'Позиций в нём: ' + cnt + '.';
+    const ok = await confirmDialog({
+      title: 'Удалить калькулятор?',
+      text: '«' + name + '» будет удалён безвозвратно. ' + itemText,
+      okText: 'Удалить',
+      danger: true
+    });
+    if (!ok) return;
+    state.calculators = state.calculators.filter(c => c.id !== editing.id);
+    editing = null;
+    lastTotal = -1;
+    save();
+    closeOverlay('#calcOverlay');
+    renderGrid();
+  });
+
+  function renderIconGrid() {
+    const grid = $('#iconGrid');
+    const cur = (editing && editing.icon) || 'cake-md';
+    let html = '';
+    for (let i = 0; i < ICON_KEYS.length; i++) {
+      const k = ICON_KEYS[i];
+      html += '<button class="icon-opt' + (k === cur ? ' active' : '') + '" data-icon="' + k + '" type="button" title="' + (ICON_NAMES[k] || k) + '">' + ICONS[k] + '</button>';
+    }
+    grid.innerHTML = html;
+  }
+
+  $('#calcIconBtn').addEventListener('click', () => {
+    if (!editing) return;
+    renderIconGrid();
+    openOverlay('#iconOverlay');
+  });
+
+  $('#iconGrid').addEventListener('click', e => {
+    const b = e.target.closest('.icon-opt');
+    if (!b || !editing) return;
+    editing.icon = b.dataset.icon;
+    save();
+    updateCalcIcon();
+    closeOverlay('#iconOverlay');
+  });
+
+  $('#iconClose').addEventListener('click', () => closeOverlay('#iconOverlay'));
+
+  function closePicker() {
+    if (!picker) return;
+    const p = picker;
+    picker = null;
+    p.close();
+  }
+
+  function listHTML(items) {
+    if (!items.length) {
+      return '<div class="dd-empty">' + (state.products.length ? 'Нет продуктов' : 'База пуста') + '</div>';
+    }
+    let h = '';
+    for (let i = 0; i < items.length; i++) {
+      const p = items[i];
+      h += '<button class="dd-i" data-id="' + p.id + '" type="button">' +
+        '<span class="dd-n">' + esc(p.name) + '</span>' +
+        '<span class="dd-p">' + money(unitCost(p)) + '/' + p.unit + '</span>' +
+      '</button>';
+    }
+    return h;
+  }
+
+  function openPickerSheet(index, triggerRow) {
+    const layer = document.createElement('div');
+    layer.className = 'picker-layer';
+    layer.innerHTML =
+      '<div class="picker-sheet" role="dialog" aria-modal="true" aria-label="Выбор продукта">' +
+        '<div class="grip" aria-hidden="true"></div>' +
+        '<div class="dd-l"></div>' +
+        '<button class="dd-add" type="button">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>' +
+          'Добавить продукт в базу</button>' +
+      '</div>';
+
+    document.body.appendChild(layer);
+
+    const list = layer.querySelector('.dd-l');
+    list.innerHTML = listHTML(state.products);
+
+    list.addEventListener('click', e => {
+      const b = e.target.closest('.dd-i');
+      if (!b) return;
+      chooseProduct(index, b.dataset.id);
+      closePicker();
+    });
+
+    layer.querySelector('.dd-add').addEventListener('click', () => {
+      closePicker();
+      openDb(index);
+    });
+
+    layer.addEventListener('click', e => {
+      if (e.target === layer) closePicker();
+    });
+
+    requestAnimationFrame(() => {
+      layer.classList.add('open');
+      updateBodyLock();
+    });
+
+    picker = {
+      trigger: triggerRow,
+      close() {
+        layer.classList.remove('open');
+        updateBodyLock();
+        setTimeout(() => layer.remove(), 460);
+      }
+    };
+  }
+
+  function openPickerPop(rowEl, index) {
+    const btn = rowEl.querySelector('.picker');
+    const r = btn.getBoundingClientRect();
+    const width = Math.max(r.width, 280);
+
+    const dd = document.createElement('div');
+    dd.className = 'dd';
+    dd.style.width = width + 'px';
+    dd.style.left = Math.max(8, Math.min(r.left, window.innerWidth - width - 8)) + 'px';
+    dd.style.top = (r.bottom + 6) + 'px';
+    dd.innerHTML =
+      '<div class="dd-l"></div>' +
+      '<button class="dd-add" type="button">' +
+        '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>' +
+        'Добавить продукт в базу</button>';
+
+    document.body.appendChild(dd);
+    btn.setAttribute('aria-expanded', 'true');
+
+    const list = dd.querySelector('.dd-l');
+    list.innerHTML = listHTML(state.products);
+
+    list.addEventListener('click', e => {
+      const b = e.target.closest('.dd-i');
+      if (!b) return;
+      chooseProduct(index, b.dataset.id);
+      closePicker();
+    });
+
+    dd.querySelector('.dd-add').addEventListener('click', () => {
+      closePicker();
+      openDb(index);
+    });
+
+    requestAnimationFrame(() => {
+      const rect = dd.getBoundingClientRect();
+      if (rect.bottom > window.innerHeight - 10) {
+        const top = r.top - rect.height - 6;
+        dd.style.top = (top > 8 ? top : Math.max(8, window.innerHeight - rect.height - 10)) + 'px';
+      }
+    });
+
+    const onDown = e => {
+      if (dd.contains(e.target)) return;
+      if (rowEl.contains(e.target)) return;
+      closePicker();
+    };
+    const onScroll = e => {
+      if (dd.contains(e.target)) return;
+      closePicker();
+    };
+    const onResize = () => closePicker();
+
+    document.addEventListener('mousedown', onDown);
+    document.addEventListener('scroll', onScroll, true);
+    window.addEventListener('resize', onResize);
+
+    picker = {
+      trigger: rowEl,
+      close() {
+        document.removeEventListener('mousedown', onDown);
+        document.removeEventListener('scroll', onScroll, true);
+        window.removeEventListener('resize', onResize);
+        btn.setAttribute('aria-expanded', 'false');
+        dd.remove();
+      }
+    };
+  }
+
+  function openPicker(rowEl, index) {
+    if (picker && picker.trigger === rowEl) {
+      closePicker();
+      return;
+    }
+    closePicker();
+    if (isMobile()) openPickerSheet(index, rowEl);
+    else openPickerPop(rowEl, index);
+  }
+
+  /* ══════════ база продуктов ══════════ */
+  function initUnits() {
+    const sel = $('#pfUnit');
+    sel.innerHTML = UNITS.map(u => '<option value="' + esc(u) + '">' + esc(u) + '</option>').join('');
+    sel.value = pfUnit;
+  }
+
+  function updatePfForm() {
+    const isEditing = !!editingProductId;
+    const wrap = $('#pfWrap');
+    const btn = $('#pfAdd');
+    wrap.classList.toggle('editing', isEditing);
+
+    const svg = btn.querySelector('svg');
+    if (isEditing) {
+      svg.innerHTML = '<path d="M5 13l4 4L19 7"/>';
+      btn.setAttribute('aria-label', 'Сохранить');
+    } else {
+      svg.innerHTML = '<path d="M12 5v14M5 12h14"/>';
+      btn.setAttribute('aria-label', 'Добавить');
+    }
+  }
+
+  function startEditProduct(id) {
+    const p = state.products.find(x => x.id === id);
+    if (!p) return;
+    // если уже в режиме редактирования другого — просто переключаемся
+    editingProductId = id;
+    $('#pfEditLabel').textContent = 'Редактирование: ' + p.name;
+    $('#pfName').value = p.name;
+    $('#pfQty').value = p.packQty;
+    $('#pfUnit').value = p.unit;
+    pfUnit = p.unit;
+    $('#pfPrice').value = p.packPrice;
+    updatePfForm();
+    updatePfAdd();
+    renderProducts();
+    if (!isMobile()) {
+      $('#pfName').focus();
+      $('#pfName').select();
+    } else {
+      const pf = $('#pfWrap');
+      if (pf && pf.scrollIntoView) pf.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
+  }
+
+  function cancelEditProduct() {
+    if (!editingProductId) return;
+    editingProductId = null;
+    $('#pfEditLabel').textContent = 'Редактирование';
+    $('#pfName').value = '';
+    $('#pfQty').value = '';
+    $('#pfUnit').value = 'г';
+    pfUnit = 'г';
+    $('#pfPrice').value = '';
+    updatePfForm();
+    updatePfAdd();
+    renderProducts();
+  }
+
+  function openDb(pendingIndex) {
+    closePicker();
+    cancelEditProduct();
+    pendingRow = (typeof pendingIndex === 'number') ? pendingIndex : null;
+    renderProducts();
+    updatePfAdd();
+    openOverlay('#dbOverlay');
+    if (!isMobile()) setTimeout(() => $('#pfName').focus(), 320);
+  }
+
+  function closeDb() {
+    closePicker();
+    cancelEditProduct();
+    pendingRow = null;
+    closeOverlay('#dbOverlay');
+  }
+
+  function renderProducts() {
+    const list = $('#prodList');
+    if (!state.products.length) {
+      list.innerHTML = '<div class="dd-empty">База пуста — добавьте первый продукт</div>';
+      return;
+    }
+    let h = '';
+    for (let i = 0; i < state.products.length; i++) {
+      const p = state.products[i];
+      const isEditingThis = p.id === editingProductId;
+      h += '<div class="prod' + (isEditingThis ? ' is-editing' : '') + '" data-id="' + p.id + '">' +
+        '<div class="prod-main">' +
+          '<div class="prod-name">' + esc(p.name) + '</div>' +
+          '<div class="prod-meta">' + num(p.packQty) + ' ' + esc(p.unit) + ' · ' + money(num(p.packPrice)) +
+            ' · ' + money(unitCost(p)) + '/' + esc(p.unit) + '</div>' +
+        '</div>' +
+        '<button class="prod-btn prod-edit" data-act="editp" type="button" aria-label="Редактировать">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4L16.5 3.5z"/></svg>' +
+        '</button>' +
+        '<button class="prod-btn prod-del" data-act="delp" type="button" aria-label="Удалить">' +
+          '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M18 6 6 18M6 6l12 12"/></svg>' +
+        '</button>' +
+      '</div>';
+    }
+    list.innerHTML = h;
+  }
+
+  async function deleteProduct(id) {
+    const p = state.products.find(x => x.id === id);
+    if (!p) return;
+    const usedBy = state.calculators.filter(c => c.items.some(it => it.productId === id));
+    let text = '«' + p.name + '» будет удалён из базы продуктов безвозвратно.';
+    if (usedBy.length) {
+      text += ' Он используется в ' + usedBy.length + ' ' + pluralCalcs(usedBy.length) + ' — позиции там тоже исчезнут.';
+    }
+    const ok = await confirmDialog({
+      title: 'Удалить продукт?',
+      text,
+      okText: 'Удалить',
+      danger: true
+    });
+    if (!ok) return;
+
+    // если редактировали именно его — сброс
+    if (editingProductId === id) cancelEditProduct();
+
+    state.products = state.products.filter(x => x.id !== id);
+    state.calculators.forEach(c => {
+      c.items = c.items.filter(it => it.productId !== id);
+    });
+    save();
+    renderProducts();
+    renderGrid();
+    if (editing) { renderRows(); updateTotal(true); }
+  }
+
+  $('#prodList').addEventListener('click', e => {
+    const b = e.target.closest('[data-act]');
+    if (!b) return;
+    const id = b.closest('.prod').dataset.id;
+    if (b.dataset.act === 'editp') startEditProduct(id);
+    else if (b.dataset.act === 'delp') deleteProduct(id);
+  });
+
+  $('#pfCancel').addEventListener('click', () => {
+    cancelEditProduct();
+    if (!isMobile()) $('#pfName').focus();
+  });
+
+  $('#pfUnit').addEventListener('change', e => {
+    pfUnit = e.target.value;
+  });
+
+  function updatePfAdd() {
+    const ok = $('#pfName').value.trim().length > 0 &&
+               num($('#pfQty').value) > 0 &&
+               $('#pfPrice').value !== '' &&
+               num($('#pfPrice').value) >= 0;
+    $('#pfAdd').disabled = !ok;
+  }
+
+  ['#pfName', '#pfQty', '#pfPrice'].forEach(s => $(s).addEventListener('input', updatePfAdd));
+
+  $('#pfName').addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); $('#pfQty').focus(); }
+  });
+  $('#pfQty').addEventListener('keydown', e => {
+    if (e.key === 'Enter') { e.preventDefault(); $('#pfPrice').focus(); }
+  });
+  $('#pfPrice').addEventListener('keydown', e => {
+    if (e.key === 'Enter') {
+      e.preventDefault();
+      if (!$('#pfAdd').disabled) $('#pfAdd').click();
+    }
+  });
+
+  function resetPfForm() {
+    $('#pfName').value = '';
+    $('#pfQty').value = '';
+    $('#pfUnit').value = 'г';
+    pfUnit = 'г';
+    $('#pfPrice').value = '';
+    updatePfAdd();
+  }
+
+  $('#pfAdd').addEventListener('click', async () => {
+    const name = $('#pfName').value.trim();
+    const qty = num($('#pfQty').value);
+    const price = num($('#pfPrice').value);
+    if (!name || qty <= 0 || price < 0) return;
+
+    /* ── редактирование существующего ── */
+    if (editingProductId) {
+      const p = state.products.find(x => x.id === editingProductId);
+      if (!p) { cancelEditProduct(); return; }
+
+      const dup = state.products.find(x =>
+        x.id !== editingProductId && x.name.trim().toLowerCase() === name.toLowerCase()
+      );
+      if (dup) {
+        const ok = await confirmDialog({
+          title: 'Похожее имя уже есть',
+          text: 'В базе уже есть «' + dup.name + '». Сохранить изменения под тем же именем?',
+          okText: 'Сохранить',
+          danger: false
+        });
+        if (!ok) return;
+      }
+
+      p.name = name;
+      p.unit = pfUnit;
+      p.packQty = qty;
+      p.packPrice = price;
+      save();
+
+      const editedId = editingProductId;
+      editingProductId = null;
+      updatePfForm();
+
+      renderProducts();
+      renderGrid();
+      if (editing) { renderRows(); updateTotal(true); }
+
+      // если пришли из пикера и ждём заполнения строки — заполняем ею же и закрываем
+      if (pendingRow !== null && editing) {
+        const idx = pendingRow;
+        pendingRow = null;
+        editing.items[idx].productId = editedId;
+        renderRows();
+        updateTotal(true);
+        save();
+        resetPfForm();
+        closeOverlay('#dbOverlay');
+        if (!isMobile()) {
+          const q = $('#ingRows').querySelector('.row[data-i="' + idx + '"] .qty');
+          if (q) q.focus();
+        }
+      } else {
+        resetPfForm();
+        if (!isMobile()) $('#pfName').focus();
+      }
+      return;
+    }
+
+    /* ── добавление нового ── */
+    const dup = state.products.find(p => p.name.trim().toLowerCase() === name.toLowerCase());
+    if (dup) {
+      const ok = await confirmDialog({
+        title: 'Такой продукт уже есть',
+        text: 'В базе уже есть «' + dup.name + '» (' + num(dup.packQty) + ' ' + dup.unit + ' за ' + money(num(dup.packPrice)) + '). Добавить ещё один?',
+        okText: 'Добавить',
+        danger: false
+      });
+      if (!ok) return;
+    }
+
+    const prod = { id: uid(), name, unit: pfUnit, packQty: qty, packPrice: price };
+    state.products.push(prod);
+    save();
+
+    if (pendingRow !== null && editing) {
+      const idx = pendingRow;
+      pendingRow = null;
+      editing.items[idx].productId = prod.id;
+      renderRows();
+      updateTotal(true);
+      save();
+      closeOverlay('#dbOverlay');
+      if (!isMobile()) {
+        const q = $('#ingRows').querySelector('.row[data-i="' + idx + '"] .qty');
+        if (q) q.focus();
+      }
+    } else {
+      renderProducts();
+    }
+
+    resetPfForm();
+    if (!isMobile()) $('#pfName').focus();
+  });
+
+  $('#openDbBtn').addEventListener('click', () => openDb(null));
+  $('#dbClose').addEventListener('click', closeDb);
+
+  Array.prototype.forEach.call(document.querySelectorAll('.overlay'), ov => {
+    if (ov.id === 'confirmOverlay') return;
+    ov.addEventListener('mousedown', e => {
+      if (e.target !== ov) return;
+      if (ov.id === 'calcOverlay') closeCalc();
+      else if (ov.id === 'dbOverlay') closeDb();
+      else if (ov.id === 'iconOverlay') closeOverlay('#iconOverlay');
+    });
+  });
+
+  document.addEventListener('keydown', e => {
+    if (e.key !== 'Escape') return;
+    if ($('#confirmOverlay').classList.contains('open')) return;
+    if (picker) { closePicker(); return; }
+    if ($('#iconOverlay').classList.contains('open')) { closeOverlay('#iconOverlay'); return; }
+    if ($('#dbOverlay').classList.contains('open')) {
+      if (editingProductId) { cancelEditProduct(); return; }
+      closeDb();
+      return;
+    }
+    if ($('#calcOverlay').classList.contains('open')) closeCalc();
+  });
+
+
+  // Explicit JSON backup: local-first data remains under the original storage key.
+  const exportBtn = $('#exportDataBtn');
+  const importBtn = $('#importDataBtn');
+  const importFile = $('#importDataFile');
+  if (exportBtn && importBtn && importFile) {
+    exportBtn.addEventListener('click', () => {
+      const payload = { schemaVersion: 1, exportedAt: new Date().toISOString(), app: 'culinary-cost-calculator', data: state };
+      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url; a.download = 'culinary-calculator-backup-' + new Date().toISOString().slice(0,10) + '.json';
+      document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+    });
+    importBtn.addEventListener('click', () => importFile.click());
+    importFile.addEventListener('change', async () => {
+      const file = importFile.files && importFile.files[0];
+      if (!file) return;
+      try {
+        const parsed = JSON.parse(await file.text());
+        const candidate = parsed && parsed.data ? parsed.data : parsed;
+        const result = validateBackup(candidate);
+        if (!result.ok) throw new Error(result.error);
+        const ok = await confirmDialog({
+          title: 'Заменить текущие данные?',
+          text: 'Импорт заменит базу продуктов и все калькуляторы. Перед импортом рекомендуется сохранить текущую резервную копию.',
+          okText: 'Импортировать', danger: false
+        });
+        if (!ok) return;
+        state = result.data;
+        state.calculators.forEach(normalizeCalc);
+        save();
+        renderGrid();
+        await confirmDialog({ title: 'Импорт завершён', text: 'Резервная копия успешно импортирована.', okText: 'Готово', danger: false });
+      } catch (error) {
+        await confirmDialog({ title: 'Не удалось импортировать', text: error.message || 'Файл имеет неверный формат.', okText: 'Понятно', danger: false });
+      } finally { importFile.value = ''; }
+    });
+  }
+
+  init();
+  initUnits();
+  updatePfForm();
+  renderGrid();
+})();
+</script>
+<script>if ("serviceWorker" in navigator && location.protocol.startsWith("http")) { window.addEventListener("load", () => navigator.serviceWorker.register("../sw.js").catch(() => {})); }</script>
+</body>
+</html>

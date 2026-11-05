@@ -1,0 +1,13 @@
+name: Предложить улучшение
+description: Опишите сценарий и ценность функции
+body:
+  - type: textarea
+    id: use_case
+    attributes:
+      label: Какую задачу нужно решить?
+    validations:
+      required: true
+  - type: textarea
+    id: proposal
+    attributes:
+      label: Как вы предлагаете это сделать?
