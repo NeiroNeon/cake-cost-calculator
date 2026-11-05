@@ -108,6 +108,8 @@
   .btn-danger:not(:disabled):active{transform:scale(.97)}
 
   .top-actions{display:flex;align-items:center;gap:4px;flex-wrap:wrap;justify-content:flex-end}
+  .save-status{font-size:11px;color:var(--danger);max-width:190px}
+  .save-status:empty{display:none}
   .top-actions .btn{height:36px;padding:0 10px;font-size:13px}
   .content{position:relative;z-index:1;max-width:1080px;margin:0 auto;padding:34px 24px 40px}
   .section-head{display:flex;align-items:baseline;gap:10px;margin-bottom:18px}
@@ -170,7 +172,7 @@
   .cc-head{position:relative;z-index:3;display:flex;align-items:center;justify-content:space-between;gap:8px}
   .cc-badge{
     display:grid;place-items:center;
-    width:32px;height:32px;flex:none;
+    width:40px;height:40px;flex:none;
     border-radius:10px;
     background:rgba(255,255,255,.72);
     color:var(--accent);
@@ -275,7 +277,7 @@
 
   .icon-btn{
     display:grid;place-items:center;
-    width:36px;height:36px;flex:none;
+    width:40px;height:40px;flex:none;
     border-radius:11px;
     color:var(--muted);
     transition:background .16s ease,color .16s ease,transform .12s ease;
@@ -285,7 +287,7 @@
   .icon-btn svg{width:18px;height:18px}
 
   .icon-btn.icon-trigger{
-    width:38px;height:38px;
+    width:40px;height:40px;
     background:var(--accent-soft);
     color:var(--accent);
   }
@@ -372,7 +374,7 @@
 
   .row-del{
     display:grid;place-items:center;
-    width:30px;height:30px;
+    width:40px;height:40px;
     border-radius:9px;
     color:#C3BAB0;
     transition:background .16s ease,color .16s ease;
@@ -472,7 +474,7 @@
 
   .prod-btn{
     display:grid;place-items:center;
-    width:32px;height:32px;flex:none;
+    width:40px;height:40px;flex:none;
     border-radius:9px;
     color:#BCB3A9;
     transition:background .16s ease,color .16s ease;
@@ -631,7 +633,7 @@
     .topbar{padding:10px 12px;padding-top:calc(10px + env(safe-area-inset-top));gap:8px}
     .brand span{font-size:13px}
     .top-actions{gap:2px}
-    .top-actions .btn{height:34px;padding:0 7px;font-size:12px}
+    .top-actions .btn{height:44px;min-height:44px;padding:0 8px;font-size:12px}
     .content{padding:22px 16px 28px}
     .info{padding:38px 16px 0}
     .footer{padding:28px 16px calc(22px + env(safe-area-inset-bottom))}
@@ -695,7 +697,7 @@
     .row .picker{grid-area:pick}
     .row .qty-wrap{grid-area:qty}
     .row .row-cost{grid-area:cost;align-self:center;font-size:14px;padding:0 4px}
-    .row .row-del{grid-area:del;width:34px;height:34px}
+    .row .row-del{grid-area:del;width:40px;height:40px}
     .add-row{margin-top:6px;padding:12px}
 
     .picker{height:44px;font-size:15px}
@@ -709,6 +711,13 @@
 
     .info h2{font-size:18px}
     .info-card{padding:18px}
+  }
+
+  @media (max-width:640px){
+    .orb{filter:none;opacity:.18;animation:none}
+    .ring{display:none}
+    .top-actions .btn{height:40px;min-width:44px;justify-content:center}
+    .icon-btn,.row .row-del{min-width:44px;min-height:44px}
   }
 
   @media (max-width:400px){
@@ -727,6 +736,8 @@
       transition-duration:.001ms !important;
     }
   }
+:focus-visible{outline:3px solid var(--accent);outline-offset:2px}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}}
 </style>
 </head>
 <body>
@@ -750,6 +761,7 @@
     <span>Калькулятор кондитера</span>
   </div>
   <div class="top-actions">
+  <span id="saveStatus" class="save-status" role="status" aria-live="polite"></span>
   <button class="btn btn-ghost" id="exportDataBtn" type="button" title="Экспорт резервной копии" aria-label="Экспорт резервной копии">Экспорт</button>
   <button class="btn btn-ghost" id="importDataBtn" type="button" title="Импорт резервной копии" aria-label="Импорт резервной копии">Импорт</button>
   <input id="importDataFile" type="file" accept="application/json,.json" hidden>
@@ -825,13 +837,13 @@
 </footer>
 
 <div class="overlay" id="calcOverlay">
-  <div class="modal modal-lg" role="dialog" aria-modal="true" aria-label="Калькулятор">
+  <div class="modal modal-lg" role="dialog" aria-modal="true" tabindex="-1" aria-label="Калькулятор">
     <div class="grip" aria-hidden="true"></div>
     <div class="modal-head">
       <button class="icon-btn icon-trigger" id="calcIconBtn" type="button" aria-label="Выбрать иконку">
         <span id="calcIconPreview"></span>
       </button>
-      <input class="title-input" id="calcTitle" placeholder="Название калькулятора" autocomplete="off" enterkeyhint="done">
+      <input class="title-input" id="calcTitle" aria-label="Название калькулятора" placeholder="Название калькулятора" autocomplete="off" enterkeyhint="done">
       <button class="icon-btn danger-hover" id="calcDeleteBtn" type="button" aria-label="Удалить калькулятор">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round">
           <path d="M4 7h16"/>
@@ -854,7 +866,7 @@
     <div class="modal-foot">
       <div>
         <div class="foot-label">Себестоимость</div>
-        <div class="foot-total" id="calcTotal">0,00 BYN</div>
+        <div class="foot-total" id="calcTotal" aria-live="polite" aria-atomic="true">0,00 BYN</div>
       </div>
       <button class="btn btn-primary" id="calcDone" type="button">Готово</button>
     </div>
@@ -862,7 +874,7 @@
 </div>
 
 <div class="overlay" id="iconOverlay">
-  <div class="modal" style="max-width:520px" role="dialog" aria-modal="true" aria-label="Иконка">
+  <div class="modal" style="max-width:520px" role="dialog" aria-modal="true" tabindex="-1" aria-label="Иконка">
     <div class="grip" aria-hidden="true"></div>
     <div class="modal-head">
       <h2 class="modal-title">Иконка калькулятора</h2>
@@ -877,7 +889,7 @@
 </div>
 
 <div class="overlay" id="dbOverlay">
-  <div class="modal" role="dialog" aria-modal="true" aria-label="База продуктов">
+  <div class="modal" role="dialog" aria-modal="true" tabindex="-1" aria-label="База продуктов">
     <div class="grip" aria-hidden="true"></div>
     <div class="modal-head">
       <h2 class="modal-title">База продуктов</h2>
@@ -891,11 +903,11 @@
           <span class="pf-edit-label" id="pfEditLabel">Редактирование</span>
           <button class="pf-cancel" id="pfCancel" type="button">Отмена</button>
         </div>
-        <input class="inp" id="pfName" placeholder="Название продукта" autocomplete="off" enterkeyhint="next">
+        <input class="inp" id="pfName" aria-label="Название продукта" placeholder="Название продукта" autocomplete="off" enterkeyhint="next">
         <div class="pf-row">
-          <input class="inp" id="pfQty" type="number" min="0" step="any" inputmode="decimal" placeholder="Кол-во" enterkeyhint="next">
+          <input class="inp" id="pfQty" aria-label="Количество в упаковке" type="number" min="0" step="any" inputmode="decimal" placeholder="Кол-во" enterkeyhint="next">
           <select class="inp unit-select" id="pfUnit" aria-label="Единица измерения"></select>
-          <input class="inp" id="pfPrice" type="number" min="0" step="any" inputmode="decimal" placeholder="Цена, BYN" enterkeyhint="done">
+          <input class="inp" id="pfPrice" aria-label="Цена упаковки в BYN" type="number" min="0" step="any" inputmode="decimal" placeholder="Цена, BYN" enterkeyhint="done">
           <button class="btn btn-primary pf-add" id="pfAdd" type="button" disabled aria-label="Добавить">
             <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
           </button>
@@ -907,7 +919,7 @@
 </div>
 
 <div class="overlay center" id="confirmOverlay">
-  <div class="modal" style="max-width:400px" role="dialog" aria-modal="true" aria-label="Подтверждение">
+  <div class="modal" style="max-width:400px" role="dialog" aria-modal="true" tabindex="-1" aria-label="Подтверждение">
     <div class="grip" aria-hidden="true"></div>
     <div class="modal-head">
       <h2 class="modal-title" id="confirmTitle">Подтверждение</h2>
@@ -1005,6 +1017,7 @@ import { calculateUnitCost, calculateTotal, validateBackup } from "./src/domain.
   let picker = null;
   let lastTotal = -1;
   let pfUnit = 'г';
+  const returnFocusElements = new Map();
 
   let vpRaf = null;
   function applyViewport() {
@@ -1038,7 +1051,15 @@ import { calculateUnitCost, calculateTotal, validateBackup } from "./src/domain.
   }
 
   function save() {
-    try { localStorage.setItem(KEY, JSON.stringify(state)); } catch (e) {}
+    const status = $('#saveStatus');
+    try {
+      localStorage.setItem(KEY, JSON.stringify(state));
+      if (status) status.textContent = '';
+      return true;
+    } catch (error) {
+      if (status) status.textContent = 'Не удалось сохранить данные. Экспортируйте резервную копию.';
+      return false;
+    }
   }
 
   function unitCost(p) { return calculateUnitCost(p); }
@@ -1110,7 +1131,7 @@ import { calculateUnitCost, calculateTotal, validateBackup } from "./src/domain.
       const c = state.calculators[i];
       const bg = CARD_BGS[i % CARD_BGS.length];
       const iconKey = (c.icon && ICONS[c.icon]) ? c.icon : 'cake-md';
-      html += '<button class="calc-card" data-id="' + c.id + '" type="button" style="--card-bg:' + bg + '">' +
+      html += '<button class="calc-card" data-id="' + esc(c.id) + '" type="button" style="--card-bg:' + bg + '">' +
         '<span class="fold" aria-hidden="true"></span>' +
         '<div class="cc-head">' +
           '<span class="cc-badge">' + ICONS[iconKey] + '</span>' +
@@ -1136,12 +1157,25 @@ import { calculateUnitCost, calculateTotal, validateBackup } from "./src/domain.
   });
 
   function openOverlay(sel) {
-    $(sel).classList.add('open');
+    const overlay = $(sel);
+    returnFocusElements.set(sel, document.activeElement);
+    overlay.classList.add('open');
     updateBodyLock();
+    const dialog = overlay.querySelector('[role="dialog"]');
+    if (dialog) {
+      if (!dialog.hasAttribute('tabindex')) dialog.setAttribute('tabindex', '-1');
+      requestAnimationFrame(() => {
+        const first = dialog.querySelector('button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), [tabindex="0"]');
+        (first || dialog).focus();
+      });
+    }
   }
   function closeOverlay(sel) {
     $(sel).classList.remove('open');
     updateBodyLock();
+    const returnFocusElement = returnFocusElements.get(sel);
+    returnFocusElements.delete(sel);
+    if (returnFocusElement && returnFocusElement.isConnected) returnFocusElement.focus();
   }
 
   function confirmDialog(opts) {
@@ -1228,8 +1262,8 @@ import { calculateUnitCost, calculateTotal, validateBackup } from "./src/domain.
         '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="m6 9 6 6 6-6"/></svg>' +
       '</button>' +
       '<label class="qty-wrap">' +
-        '<input class="qty" type="number" min="0" step="any" inputmode="decimal" value="' + (it.qty || '') + '" placeholder="0" enterkeyhint="done">' +
-        '<span class="unit">' + (p ? p.unit : '') + '</span>' +
+        '<input class="qty" aria-label="Количество ингредиента" type="number" min="0" step="any" inputmode="decimal" value="' + (it.qty || '') + '" placeholder="0" enterkeyhint="done">' +
+        '<span class="unit">' + (p ? esc(p.unit) : '') + '</span>' +
       '</label>' +
       '<span class="row-cost">' + money(cost) + '</span>' +
       '<button class="row-del" data-act="del" type="button" aria-label="Удалить">' +
@@ -1393,9 +1427,9 @@ import { calculateUnitCost, calculateTotal, validateBackup } from "./src/domain.
     let h = '';
     for (let i = 0; i < items.length; i++) {
       const p = items[i];
-      h += '<button class="dd-i" data-id="' + p.id + '" type="button">' +
+      h += '<button class="dd-i" data-id="' + esc(p.id) + '" type="button">' +
         '<span class="dd-n">' + esc(p.name) + '</span>' +
-        '<span class="dd-p">' + money(unitCost(p)) + '/' + p.unit + '</span>' +
+        '<span class="dd-p">' + money(unitCost(p)) + '/' + esc(p.unit) + '</span>' +
       '</button>';
     }
     return h;
@@ -1405,7 +1439,7 @@ import { calculateUnitCost, calculateTotal, validateBackup } from "./src/domain.
     const layer = document.createElement('div');
     layer.className = 'picker-layer';
     layer.innerHTML =
-      '<div class="picker-sheet" role="dialog" aria-modal="true" aria-label="Выбор продукта">' +
+      '<div class="picker-sheet" role="dialog" aria-modal="true" tabindex="-1" aria-label="Выбор продукта">' +
         '<div class="grip" aria-hidden="true"></div>' +
         '<div class="dd-l"></div>' +
         '<button class="dd-add" type="button">' +
@@ -1615,7 +1649,7 @@ import { calculateUnitCost, calculateTotal, validateBackup } from "./src/domain.
     for (let i = 0; i < state.products.length; i++) {
       const p = state.products[i];
       const isEditingThis = p.id === editingProductId;
-      h += '<div class="prod' + (isEditingThis ? ' is-editing' : '') + '" data-id="' + p.id + '">' +
+      h += '<div class="prod' + (isEditingThis ? ' is-editing' : '') + '" data-id="' + esc(p.id) + '">' +
         '<div class="prod-main">' +
           '<div class="prod-name">' + esc(p.name) + '</div>' +
           '<div class="prod-meta">' + num(p.packQty) + ' ' + esc(p.unit) + ' · ' + money(num(p.packPrice)) +
@@ -1819,6 +1853,19 @@ import { calculateUnitCost, calculateTotal, validateBackup } from "./src/domain.
   });
 
   document.addEventListener('keydown', e => {
+    if (e.key === 'Tab') {
+      const openOverlays = document.querySelectorAll('.overlay.open');
+      const activeOverlay = openOverlays[openOverlays.length - 1];
+      if (activeOverlay) {
+        const focusable = [...activeOverlay.querySelectorAll('button:not([disabled]), input:not([disabled]), select:not([disabled]), textarea:not([disabled]), a[href], [tabindex="0"]')].filter(el => el.getClientRects().length);
+        if (focusable.length) {
+          const first = focusable[0], last = focusable[focusable.length - 1];
+          if (e.shiftKey && (document.activeElement === first || !activeOverlay.contains(document.activeElement))) { e.preventDefault(); last.focus(); }
+          else if (!e.shiftKey && (document.activeElement === last || !activeOverlay.contains(document.activeElement))) { e.preventDefault(); first.focus(); }
+        }
+      }
+      return;
+    }
     if (e.key !== 'Escape') return;
     if ($('#confirmOverlay').classList.contains('open')) return;
     if (picker) { closePicker(); return; }
@@ -1843,7 +1890,7 @@ import { calculateUnitCost, calculateTotal, validateBackup } from "./src/domain.
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
       a.href = url; a.download = 'culinary-calculator-backup-' + new Date().toISOString().slice(0,10) + '.json';
-      document.body.appendChild(a); a.click(); a.remove(); URL.revokeObjectURL(url);
+      document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000);
     });
     importBtn.addEventListener('click', () => importFile.click());
     importFile.addEventListener('change', async () => {

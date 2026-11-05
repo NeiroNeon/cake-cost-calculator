@@ -11,3 +11,6 @@ coverage/
 
 __pycache__/
 *.py[cod]
+
+test-results/
+*.pyc

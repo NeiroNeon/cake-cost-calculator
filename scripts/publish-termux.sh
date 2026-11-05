@@ -17,6 +17,13 @@ cd "$PROJECT_DIR"
 
 printf '\nКалькулятор кондитера — публикация на GitHub\nКаталог: %s\n\n' "$PROJECT_DIR"
 
+if command -v npm >/dev/null 2>&1 && [[ -f package.json ]]; then
+  info "Запускаю pre-push проверки проекта…"
+  npm run check || fail "Проверки не пройдены. Исправьте ошибки перед публикацией."
+else
+  warn "Node.js/npm не найдены — автоматические проверки пропущены. Установите nodejs-lts и повторите публикацию для полного preflight."
+fi
+
 if ! command -v git >/dev/null 2>&1; then
   command -v pkg >/dev/null 2>&1 || fail "Git не установлен. В Termux выполните: pkg install git"
   info "Устанавливаю Git через Termux pkg…"

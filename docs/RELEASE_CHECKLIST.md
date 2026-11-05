@@ -1,19 +1,20 @@
-# Релизный чек-лист
+# Release checklist
 
-## Перед публикацией
+## Automated
+1. `npm run check` — syntax and 12 unit tests.
+2. Install Playwright and Chromium.
+3. `npm run audit:responsive` — viewport smoke tests and screenshots.
+4. GitHub Actions CI must be green; inspect `responsive-browser-audit`.
 
-1. Создать пустой GitHub-репозиторий.
-2. Выполнить `npm test`.
-3. Проверить локально `python3 -m http.server 4173`.
-4. Проверить главную, `/app/`, JSON export/import, мобильный экран, клавиатуру и обновление цены продукта.
-5. Проверить offline после первого полного посещения по HTTPS.
-6. Авторизоваться в GitHub из Termux и запустить `scripts/publish-termux.sh`.
-7. В настройках репозитория выбрать Pages → GitHub Actions.
-8. После публикации проверить GitHub Pages URL и установку PWA.
+## Deployment
+1. GitHub Pages → Build and deployment → GitHub Actions.
+2. Confirm Pages workflow succeeds.
+3. Verify `/` and `/app/`, assets and refresh on the published URL.
+4. Test offline only after service worker installation and activation.
 
-## После публикации
+## Physical devices
+- [ ] Android Chrome: keyboard, rotation, import/export, PWA.
+- [ ] iOS Safari: safe areas, Home Screen, standalone.
+- [ ] Desktop Safari and Firefox.
 
-- Проверить консоль браузера и сетевые ошибки.
-- Проверить импорт старого backup и наличие данных после обновления.
-- Сохранить тег релиза `v1.0.0` после ручного smoke-теста.
-- Не заявлять поддержку браузера/устройства, которое не проверено вручную.
+Do not claim device/production readiness before relevant checks pass. Exclude caches, screenshots, secrets and temporary files from ZIP.

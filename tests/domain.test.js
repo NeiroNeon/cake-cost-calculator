@@ -38,3 +38,20 @@ test('duplicate identifiers are rejected', () => {
   const result = validateBackup({ products: [flour, { ...flour, name: 'Другая мука' }], calculators: [] });
   assert.equal(result.ok, false);
 });
+
+
+test('backup rejects identifiers that could break HTML attributes', () => {
+  const result = validateBackup({
+    products: [{ ...flour, id: 'flour" onmouseover=alert(1)' }],
+    calculators: []
+  });
+  assert.equal(result.ok, false);
+});
+
+test('backup rejects calculator identifiers outside the safe ID format', () => {
+  const result = validateBackup({
+    products: [flour],
+    calculators: [{ id: 'calc/1', name: 'Бенто', items: [{ productId: 'flour', qty: 10 }] }]
+  });
+  assert.equal(result.ok, false);
+});

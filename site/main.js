@@ -12,8 +12,22 @@ function updateDemo() {
 }
 rows.forEach(input => input.addEventListener('input', updateDemo));
 const menu = document.querySelector('.menu');
-menu?.addEventListener('click', () => document.querySelector('.nav nav').classList.toggle('open'));
-document.querySelectorAll('.nav nav a').forEach(link => link.addEventListener('click', () => document.querySelector('.nav nav').classList.remove('open')));
+const navigation = document.querySelector('#primary-navigation');
+function setMenuOpen(open) {
+  if (!menu || !navigation) return;
+  navigation.classList.toggle('open', open);
+  menu.setAttribute('aria-expanded', String(open));
+  menu.setAttribute('aria-label', open ? 'Закрыть меню' : 'Открыть меню');
+  menu.textContent = open ? '×' : '☰';
+}
+menu?.addEventListener('click', () => setMenuOpen(menu.getAttribute('aria-expanded') !== 'true'));
+navigation?.querySelectorAll('a').forEach(link => link.addEventListener('click', () => setMenuOpen(false)));
+document.addEventListener('keydown', event => {
+  if (event.key === 'Escape') setMenuOpen(false);
+});
+window.addEventListener('resize', () => {
+  if (window.innerWidth > 680) setMenuOpen(false);
+}, { passive: true });
 if ('serviceWorker' in navigator && location.protocol.startsWith('http')) addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(() => {}));
 const revealItems = [...document.querySelectorAll('.metrics div, .step, .formula-card, .privacy-copy, .closing h2')];
 revealItems.forEach((item, index) => {

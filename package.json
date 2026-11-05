@@ -1,14 +1,17 @@
 {
   "name": "culinary-cost-calculator",
-  "version": "1.0.0",
+  "version": "1.1.1",
   "private": false,
   "type": "module",
   "description": "Local-first open-source calculator for confectionery product costing",
   "scripts": {
     "test": "node --test",
     "check": "node --check app/src/domain.js && node --check site/main.js && node --check sw.js && python3 scripts/check-inline.py && node --test",
-    "serve": "python3 -m http.server 4173"
+    "serve": "python3 -m http.server 4173",
+    "audit:responsive": "python3 scripts/responsive-audit.py"
   },
-  "engines": { "node": ">=20" },
+  "engines": {
+    "node": ">=20"
+  },
   "license": "MIT"
 }

@@ -20,12 +20,14 @@ export function calculateTotal(calculator, products) {
   }, 0);
 }
 
+const SAFE_ID = /^[A-Za-z0-9_-]{1,128}$/;
+
 export function validateBackup(input) {
   if (!input || typeof input !== 'object' || Array.isArray(input)) return { ok: false, error: 'Ожидается JSON-объект.' };
   if (!Array.isArray(input.products) || !Array.isArray(input.calculators)) return { ok: false, error: 'В файле должны быть массивы products и calculators.' };
   const productIds = new Set();
   for (const product of input.products) {
-    if (!product || typeof product.id !== 'string' || !product.id || typeof product.name !== 'string' || !product.name.trim()) return { ok: false, error: 'Найдена запись продукта без корректного ID или названия.' };
+    if (!product || typeof product.id !== 'string' || !SAFE_ID.test(product.id) || typeof product.name !== 'string' || !product.name.trim()) return { ok: false, error: 'Найдена запись продукта без корректного ID или названия.' };
     if (productIds.has(product.id)) return { ok: false, error: `Повторяется ID продукта: ${product.id}` };
     productIds.add(product.id);
     if (!Number.isFinite(Number(product.packQty)) || Number(product.packQty) <= 0 || !Number.isFinite(Number(product.packPrice)) || Number(product.packPrice) < 0) return { ok: false, error: `Некорректная упаковка или цена продукта «${product.name}».` };
@@ -33,11 +35,11 @@ export function validateBackup(input) {
   }
   const calculatorIds = new Set();
   for (const calculator of input.calculators) {
-    if (!calculator || typeof calculator.id !== 'string' || !calculator.id || typeof calculator.name !== 'string' || !Array.isArray(calculator.items)) return { ok: false, error: 'Найдена некорректная запись калькулятора.' };
+    if (!calculator || typeof calculator.id !== 'string' || !SAFE_ID.test(calculator.id) || typeof calculator.name !== 'string' || !calculator.name.trim() || !Array.isArray(calculator.items)) return { ok: false, error: 'Найдена некорректная запись калькулятора.' };
     if (calculatorIds.has(calculator.id)) return { ok: false, error: `Повторяется ID калькулятора: ${calculator.id}` };
     calculatorIds.add(calculator.id);
     for (const item of calculator.items) {
-      if (!item || typeof item.productId !== 'string' || !Number.isFinite(Number(item.qty)) || Number(item.qty) < 0) return { ok: false, error: `Некорректная позиция в калькуляторе «${calculator.name}».` };
+      if (!item || typeof item.productId !== 'string' || !SAFE_ID.test(item.productId) || !Number.isFinite(Number(item.qty)) || Number(item.qty) < 0) return { ok: false, error: `Некорректная позиция в калькуляторе «${calculator.name}».` };
       if (!productIds.has(item.productId)) return { ok: false, error: `В калькуляторе «${calculator.name}» есть ссылка на отсутствующий продукт.` };
     }
   }
