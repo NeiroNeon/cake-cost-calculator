@@ -14,6 +14,38 @@ function loadRecipes(){try{const value=JSON.parse(localStorage.getItem(RECIPES_K
 function loadProducts(){try{const raw=localStorage.getItem(PRODUCTS_KEY)??localStorage.getItem(LEGACY_PRODUCTS_KEY);const data=JSON.parse(raw||'{}');return Array.isArray(data.products)?data.products:[]}catch{return []}}
 function save(){try{localStorage.setItem(RECIPES_KEY,JSON.stringify(recipes));return true}catch(error){alert('Не удалось сохранить базу рецептов в памяти устройства. Экспортируйте данные и освободите место в браузере.');return false}}
 function recipeCost(recipe){return calculateRecipeCost(recipe,products)}
+function clearFieldError(field){
+ if(!field)return;
+ field.classList.remove('is-invalid');field.removeAttribute('aria-invalid');
+ const error=field.parentElement?.querySelector(`.field-error[data-for="${field.id||field.className.split(' ')[0]}"]`);
+ error?.remove();
+}
+function markFieldError(field,message){
+ clearFieldError(field);field.classList.add('is-invalid');field.setAttribute('aria-invalid','true');
+ const key=field.id||field.className.split(' ')[0];
+ const error=document.createElement('div');error.className='field-error';error.dataset.for=key;error.textContent=message;
+ field.parentElement.append(error);
+}
+function focusInvalidField(field){
+ const body=$('#editor .body');
+ field.scrollIntoView({behavior:'smooth',block:'center'});
+ if(body){const a=field.getBoundingClientRect(),b=body.getBoundingClientRect();if(a.top<b.top||a.bottom>b.bottom)body.scrollBy({top:a.top-b.top-(b.height-a.height)/2,behavior:'smooth'})}
+ field.focus({preventScroll:true});
+}
+function validateFormUI(){
+ const name=$('#name');
+ if(!name.value.trim()){markFieldError(name,'Укажите название технологической карты.');focusInvalidField(name);return false}
+ for(const row of $('#ingredients').children){
+  const ingredientName=row.querySelector('.ing-name'),qty=row.querySelector('.ing-qty');
+  if(!ingredientName.value.trim()){markFieldError(ingredientName,'Введите название ингредиента.');focusInvalidField(ingredientName);return false}
+  if(!qty.value.trim()||!Number.isFinite(Number(qty.value))||Number(qty.value)<=0){markFieldError(qty,'Укажите количество больше нуля.');focusInvalidField(qty);return false}
+ }
+ for(const selector of ['#yield','#temperature','#time']){
+  const field=$(selector);
+  if(field.value!==''&&!field.validity.valid){markFieldError(field,'Проверьте значение этого поля.');focusInvalidField(field);return false}
+ }
+ return true;
+}
 function render(){
  const query=$('#search').value.trim().toLocaleLowerCase('ru');
  const category=$('#category').value;
@@ -33,7 +65,7 @@ function ingredientRow(item={}){
   updateCost();
  });
  row.querySelector('.remove').addEventListener('click',()=>{row.remove();updateCost()});
- row.querySelectorAll('input,select').forEach(el=>el.addEventListener('input',updateCost));
+ row.querySelectorAll('input,select').forEach(el=>el.addEventListener('input',()=>{clearFieldError(el);updateCost()}));
  return row;
 }
 function stepRow(value=''){
@@ -66,12 +98,14 @@ $('#closeEditor').addEventListener('click',()=>$('#editor').close());
 $('#cancel').addEventListener('click',()=>$('#editor').close());
 $('#addIngredient').addEventListener('click',()=>$('#ingredients').append(ingredientRow()));
 $('#addStep').addEventListener('click',()=>{$('#steps').append(stepRow());renumberSteps()});
-['#yield','#name','#cat','#scaleTo'].forEach(s=>$(s).addEventListener('input',updateCost));
+['#yield','#name','#cat','#scaleTo'].forEach(s=>$(s).addEventListener('input',()=>{clearFieldError($(s));updateCost()}));
+['#temperature','#time'].forEach(s=>$(s).addEventListener('input',()=>clearFieldError($(s))));
 $('#recipeForm').addEventListener('submit',event=>{
  event.preventDefault();
+ if(!validateFormUI())return;
  const recipe={id:editingId||uid(),name:$('#name').value.trim(),category:$('#cat').value,yieldGrams:Number($('#yield').value)||0,ingredients:readIngredients(),steps:[...$('#steps').querySelectorAll('textarea')].map(x=>x.value.trim()).filter(Boolean),temperature:$('#temperature').value===''?null:Number($('#temperature').value),timeMinutes:$('#time').value===''?null:Number($('#time').value),storage:$('#storage').value.trim(),notes:$('#notes').value.trim(),updatedAt:new Date().toISOString()};
  const check=validateRecipe(recipe);
- if(!check.ok){alert(check.error);return}
+ if(!check.ok){const field=check.error.includes('название')?$('#name'):$('#yield');markFieldError(field,check.error);focusInvalidField(field);return}
  const index=recipes.findIndex(r=>r.id===recipe.id);if(index<0)recipes.unshift(recipe);else recipes[index]=recipe;
  save();$('#editor').close();render();
 });
