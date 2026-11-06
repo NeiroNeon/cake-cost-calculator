@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="ru">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="theme-color" content="#F4EFE8">
+<title>Технологические карты — Pastry Studio</title>
+<link rel="manifest" href="../manifest.webmanifest">
+<style>
+:root{--bg:#f4efe8;--paper:#fff;--ink:#211b15;--muted:#82776b;--line:#e8e0d6;--accent:#b4562e;--soft:#faede4;--bad:#a52f24}
+*{box-sizing:border-box}body{margin:0;background:linear-gradient(180deg,#f7f3ed,#f0e9df);color:var(--ink);font:15px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif}
+button,input,select,textarea{font:inherit}button{cursor:pointer}.top{position:sticky;top:0;z-index:5;display:flex;align-items:center;justify-content:space-between;gap:12px;padding:12px max(16px,calc((100vw - 1080px)/2));background:#f4efe8ed;border-bottom:1px solid var(--line);backdrop-filter:blur(14px)}
+.brand{font-weight:700}.top a{color:var(--accent);text-decoration:none;font-size:14px}.wrap{max-width:1080px;margin:auto;padding:28px 18px 56px}.head{display:flex;align-items:center;justify-content:space-between;gap:12px;margin-bottom:18px}.head h1{font-size:24px;letter-spacing:-.03em;margin:0}.muted{color:var(--muted)}.btn{border:1px solid var(--line);background:white;border-radius:11px;padding:10px 14px;color:var(--ink)}.primary{background:var(--accent);border-color:var(--accent);color:white}.danger{color:var(--bad)}.toolbar{display:flex;gap:9px;flex-wrap:wrap;margin-bottom:16px}.field{width:100%;min-width:0;border:1px solid var(--line);border-radius:10px;padding:10px 11px;background:#fff;color:var(--ink)}.search{flex:1;min-width:180px}.filters{display:flex;gap:8px;flex-wrap:wrap}.cards{display:grid;grid-template-columns:repeat(auto-fill,minmax(min(100%,250px),1fr));gap:14px}.card{background:#fff;border:1px solid #e8e0d6;border-radius:18px;padding:16px;box-shadow:0 10px 28px -24px #57351f;min-width:0}.card h3{margin:0 0 6px;font-size:17px}.card p{margin:5px 0;color:var(--muted);font-size:13px}.card-foot{display:flex;justify-content:space-between;align-items:center;gap:8px;margin-top:14px}.price{font-weight:700;font-variant-numeric:tabular-nums}.empty{padding:34px 18px;text-align:center;border:1px dashed #d9cfc2;border-radius:16px;color:var(--muted)}
+dialog{border:0;border-radius:20px;padding:0;width:min(760px,calc(100% - 24px));max-height:min(90dvh,900px);box-shadow:0 30px 90px #2d1e1240}dialog::backdrop{background:#20181170;backdrop-filter:blur(3px)}.modal-head,.modal-foot{padding:14px 18px;border-bottom:1px solid var(--line);display:flex;align-items:center;gap:10px}.modal-head h2{font-size:18px;margin:0;flex:1}.modal-foot{border:0;border-top:1px solid var(--line);justify-content:space-between}.body{padding:16px 18px;overflow:auto;max-height:calc(90dvh - 130px)}.form-grid{display:grid;grid-template-columns:2fr 1fr 1fr;gap:10px}.label{display:block;font-size:12px;color:var(--muted);margin:0 0 5px}.group{margin:16px 0}.group-title{display:flex;align-items:center;justify-content:space-between;margin-bottom:8px;font-weight:650}.ingredient{display:grid;grid-template-columns:minmax(0,1fr) 100px 82px 38px;gap:7px;margin:7px 0;align-items:center}.ingredient select{min-width:0}.step{display:grid;grid-template-columns:32px 1fr 38px;gap:8px;margin:7px 0;align-items:start}.step-num{padding:10px 0;color:var(--muted);text-align:center}.step textarea{min-height:68px;resize:vertical}.subtle{font-size:12px;color:var(--muted)}.calc-panel{background:#faf6f1;border-radius:12px;padding:12px;margin-top:12px}.rowline{display:flex;justify-content:space-between;gap:10px;margin:5px 0}.actions{display:flex;gap:7px;flex-wrap:wrap}.notice{padding:10px 12px;border-radius:10px;background:#fff5e8;color:#80511d;font-size:13px;margin:10px 0}.badtext{color:var(--bad)}.hidden{display:none!important}
+@media(max-width:600px){.wrap{padding:20px 13px 40px}.head{align-items:flex-start}.head h1{font-size:21px}.form-grid{grid-template-columns:1fr 1fr}.form-grid>div:first-child{grid-column:1/-1}.ingredient{grid-template-columns:minmax(0,1fr) 76px 68px 34px;gap:5px}.ingredient .field{padding:9px 7px;font-size:13px}.modal-head,.modal-foot{padding:12px}.body{padding:13px}.top{padding:11px 13px}}
+:focus-visible{outline:3px solid #b4562e;outline-offset:2px}
+</style>
+</head>
+<body>
+<header class="top"><div class="brand">Pastry Studio · Технологические карты</div><div class="actions"><button class="btn" id="exportRecipes">Экспорт</button><button class="btn" id="importRecipes">Импорт</button><input id="importFile" type="file" accept="application/json,.json" hidden><a href="./index.html">← Калькулятор</a></div></header>
+<main class="wrap">
+  <div class="head"><div><h1>База рецептов</h1><div class="muted" id="count">Технологические карты и составные рецепты</div></div><button class="btn primary" id="newRecipe">＋ Новый рецепт</button></div>
+  <div class="toolbar"><input class="field search" id="search" placeholder="Поиск по названию или ингредиентам"><select class="field" id="category" style="max-width:190px"><option value="">Все категории</option><option>Бисквит</option><option>Крем</option><option>Начинка</option><option>Тесто</option><option>Десерт</option><option>Изделие</option><option>Другое</option></select></div>
+  <div class="cards" id="cards"></div>
+</main>
+<dialog id="editor">
+ <div class="modal-head"><h2 id="dialogTitle">Новый рецепт</h2><button class="btn" id="closeEditor" aria-label="Закрыть">✕</button></div>
+ <form id="recipeForm">
+  <div class="body">
+   <div class="form-grid">
+    <div><label class="label" for="name">Название рецепта *</label><input class="field" id="name" required maxlength="100" placeholder="Например, ванильный бисквит"></div>
+    <div><label class="label" for="cat">Категория</label><select class="field" id="cat"><option>Бисквит</option><option>Крем</option><option>Начинка</option><option>Тесто</option><option>Десерт</option><option>Изделие</option><option>Другое</option></select></div>
+    <div><label class="label" for="yield">Выход, г</label><input class="field" id="yield" type="number" min="0" step="any" placeholder="Напр. 850"></div>
+   </div>
+   <div class="group"><label class="label" for="scaleTo">Рассчитать количества на выход, г (необязательно)</label><input class="field" id="scaleTo" type="number" min="0.01" step="any" placeholder="Оставьте пустым, чтобы использовать исходный выход"></div>
+   <div class="group"><div class="group-title">Ингредиенты <button class="btn" type="button" id="addIngredient">＋ Добавить</button></div><div id="ingredients"></div><div class="subtle">Можно выбрать закупочный продукт или оставить ингредиент текстовым. Текстовые позиции не входят в себестоимость, пока не привязаны к базе.</div></div>
+   <div class="group"><div class="group-title">Приготовление <button class="btn" type="button" id="addStep">＋ Этап</button></div><div id="steps"></div></div>
+   <div class="form-grid">
+    <div><label class="label" for="temperature">Температура, °C</label><input class="field" id="temperature" type="number" step="any" placeholder="Напр. 170"></div>
+    <div><label class="label" for="time">Время, мин</label><input class="field" id="time" type="number" min="0" step="any" placeholder="Напр. 35"></div>
+    <div><label class="label" for="storage">Хранение</label><input class="field" id="storage" maxlength="120" placeholder="Условия / срок"></div>
+   </div>
+   <div class="group"><label class="label" for="notes">Примечания и технологические нюансы</label><textarea class="field" id="notes" rows="3" placeholder="Консистенция, признаки готовности, охлаждение..."></textarea></div>
+   <div class="calc-panel" id="costPanel"></div>
+  </div>
+  <div class="modal-foot"><span class="subtle">Сохраняется на этом устройстве</span><div class="actions"><button class="btn" type="button" id="cancel">Отмена</button><button class="btn primary" type="submit">Сохранить карту</button></div></div>
+ </form>
+</dialog>
+<script type="module" src="./src/recipes.js"></script>
+</body></html>
