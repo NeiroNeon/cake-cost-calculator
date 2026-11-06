@@ -1011,6 +1011,8 @@ import { calculateUnitCost, calculateTotal, validateBackup } from "./src/domain.
   const KEY = 'bento_cost_v3';
   const OLD_KEY = 'bento_cost_v2';
   let state = { products: [], calculators: [] };
+  let storageRecoveryRequired = false;
+  let unreadableStorageRaw = null;
   let editing = null;
   let editingProductId = null;
   let pendingRow = null;
@@ -1052,6 +1054,10 @@ import { calculateUnitCost, calculateTotal, validateBackup } from "./src/domain.
 
   function save() {
     const status = $('#saveStatus');
+    if (storageRecoveryRequired) {
+      if (status) status.textContent = 'Сохранение заблокировано: импортируйте резервную копию, чтобы не перезаписать исходные данные.';
+      return false;
+    }
     try {
       localStorage.setItem(KEY, JSON.stringify(state));
       if (status) status.textContent = '';
@@ -1073,17 +1079,33 @@ import { calculateUnitCost, calculateTotal, validateBackup } from "./src/domain.
   }
 
   function init() {
+    let raw = null;
     try {
-      const raw = localStorage.getItem(KEY) || localStorage.getItem(OLD_KEY);
-      if (raw) {
+      raw = localStorage.getItem(KEY);
+      if (raw === null) raw = localStorage.getItem(OLD_KEY);
+    } catch (error) {
+      storageRecoveryRequired = true;
+      $('#saveStatus').textContent = 'Не удалось прочитать локальное хранилище. Импортируйте резервную копию; текущие данные не будут перезаписаны.';
+      return;
+    }
+
+    if (raw !== null) {
+      try {
         const d = JSON.parse(raw);
-        if (d && Array.isArray(d.products) && Array.isArray(d.calculators)) {
-          state = d;
-          state.calculators.forEach(normalizeCalc);
-          return;
+        if (!d || !Array.isArray(d.products) || !Array.isArray(d.calculators)) {
+          throw new Error('Некорректная структура сохранённых данных.');
         }
+        state = d;
+        state.calculators.forEach(normalizeCalc);
+        return;
+      } catch (error) {
+        storageRecoveryRequired = true;
+        unreadableStorageRaw = raw;
+        state = { products: [], calculators: [] };
+        $('#saveStatus').textContent = 'Сохранённые данные повреждены. Исходная запись защищена от перезаписи: экспортируйте её или импортируйте резервную копию.';
+        return;
       }
-    } catch (e) {}
+    }
 
     const mk = (name, unit, packQty, packPrice) => ({ id: uid(), name, unit, packQty, packPrice });
     state.products = [
@@ -1189,6 +1211,7 @@ import { calculateUnitCost, calculateTotal, validateBackup } from "./src/domain.
       okBtn.textContent = opts.okText || 'Удалить';
       okBtn.className = 'btn ' + (opts.danger === false ? 'btn-primary' : 'btn-danger');
 
+      const returnFocusElement = document.activeElement;
       const cleanup = result => {
         ov.classList.remove('open');
         updateBodyLock();
@@ -1196,6 +1219,7 @@ import { calculateUnitCost, calculateTotal, validateBackup } from "./src/domain.
         cancelBtn.removeEventListener('click', onCancel);
         ov.removeEventListener('mousedown', onBackdrop);
         document.removeEventListener('keydown', onKey);
+        if (returnFocusElement && returnFocusElement.isConnected) returnFocusElement.focus();
         resolve(result);
       };
       const onOk = () => cleanup(true);
@@ -1885,11 +1909,12 @@ import { calculateUnitCost, calculateTotal, validateBackup } from "./src/domain.
   const importFile = $('#importDataFile');
   if (exportBtn && importBtn && importFile) {
     exportBtn.addEventListener('click', () => {
+      const recoveryMode = storageRecoveryRequired && unreadableStorageRaw !== null;
       const payload = { schemaVersion: 1, exportedAt: new Date().toISOString(), app: 'culinary-cost-calculator', data: state };
-      const blob = new Blob([JSON.stringify(payload, null, 2)], { type: 'application/json' });
+      const blob = new Blob([recoveryMode ? unreadableStorageRaw : JSON.stringify(payload, null, 2)], { type: 'application/json' });
       const url = URL.createObjectURL(blob);
       const a = document.createElement('a');
-      a.href = url; a.download = 'culinary-calculator-backup-' + new Date().toISOString().slice(0,10) + '.json';
+      a.href = url; a.download = 'culinary-calculator-' + (recoveryMode ? 'recovery-' : 'backup-') + new Date().toISOString().slice(0,10) + '.json';
       document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000);
     });
     importBtn.addEventListener('click', () => importFile.click());
@@ -1909,6 +1934,8 @@ import { calculateUnitCost, calculateTotal, validateBackup } from "./src/domain.
         if (!ok) return;
         state = result.data;
         state.calculators.forEach(normalizeCalc);
+        storageRecoveryRequired = false;
+        unreadableStorageRaw = null;
         save();
         renderGrid();
         await confirmDialog({ title: 'Импорт завершён', text: 'Резервная копия успешно импортирована.', okText: 'Готово', danger: false });

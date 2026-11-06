@@ -12,7 +12,11 @@ self.addEventListener('fetch', event => {
       if (response.ok) await cache.put(event.request, response.clone());
       return response;
     } catch {
-      return (await cache.match('./index.html')) || Response.error();
+      const requestUrl = new URL(event.request.url);
+      const appPath = new URL('./app/index.html', self.registration.scope);
+      const rootPath = new URL('./index.html', self.registration.scope);
+      const fallback = requestUrl.pathname.includes('/app/') ? appPath : rootPath;
+      return (await cache.match(fallback.href)) || (await cache.match(fallback.pathname)) || Response.error();
     }
   }));
 });
