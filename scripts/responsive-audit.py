@@ -66,7 +66,7 @@ def main():
     assert page.evaluate('document.documentElement.scrollWidth <= document.documentElement.clientWidth + 1'), 'Horizontal page overflow after adding component'
     assert editor.evaluate('e => e.scrollWidth <= e.clientWidth + 1'), 'Horizontal overflow inside recipe editor'
     body = editor.locator('.body')
-    assert body.evaluate("e => getComputedStyle(e).overflowY in ['auto', 'scroll']"), 'Recipe editor body is not vertically scrollable'
+    assert body.evaluate("e => ['auto', 'scroll'].includes(getComputedStyle(e).overflowY)"), 'Recipe editor body is not vertically scrollable'
     assert body.evaluate("e => e.clientHeight > 0 && e.scrollHeight >= e.clientHeight"), 'Recipe editor body has invalid scroll dimensions'
     assert editor.locator('#recipeForm').is_visible(), 'Recipe form is not visible'
 
