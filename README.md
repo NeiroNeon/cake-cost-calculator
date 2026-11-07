@@ -1,97 +1,55 @@
-# Калькулятор кондитера
+# Phase 2 — inline validation for the main calculator
 
-Локальный open-source инструмент для расчёта себестоимости бенто-тортов, капкейков, трайфлов и других кондитерских изделий. Интерфейс на русском языке, валюта — BYN.
+## What this patch changes
 
-**[Открыть демо](./)** · **[Запустить калькулятор](./app/)** · **[Документация](./docs/)**
+The patch updates **only** `app/index.html`:
 
-## Технологические карты
+- Product form: shows field-level errors for product name, package quantity and price; scrolls to and focuses the first invalid field.
+- Calculator: validates calculator name, product selection and ingredient quantity before completing the calculator; highlights the invalid control and moves focus to it.
+- JSON import: displays parsing and structure errors inline instead of opening a system-style confirmation dialog for validation failures.
+- Adds accessible live error/status regions and red invalid-field styling.
 
-- Отдельный модуль базы рецептов: [открыть](./app/recipes.html).
-- Комбинированные ингредиенты: привязка к закупочной базе или текстовая позиция без цены.
-- Расчёт стоимости привязанных ингредиентов, контроль несовпадения единиц и масштабирование по выходу.
-- Отдельный JSON-экспорт/импорт рецептов. Данные хранятся в `bento_recipes_v1`.
-- Документация MVP: [технологические карты](./docs/docs-RECIPES-MVP.md).
-- Расширение расчётного ядра: [модель составных рецептов](./docs/RECIPES_DOMAIN_V2.md).
+It does not modify recipe-editor files, README, tests, or any other project file.
 
-## Возможности
+## Apply in Termux
 
-- База ингредиентов, декора и упаковки с ценой и размером упаковки.
-- Несколько независимых калькуляторов рецептов.
-- Мгновенный пересчёт при изменении количества или цены продукта.
-- 26 единиц измерения и 25 SVG-иконок изделий.
-- Редактирование продуктов с обновлением всех связанных расчётов.
-- Подтверждение опасных действий и проверка вводимых значений.
-- BYN, адаптивная мобильная компоновка и поддержка экранной клавиатуры.
-- Экспорт и импорт JSON-резервной копии с проверкой структуры.
-- PWA: установка на устройство и офлайн-кэширование после первого посещения.
-- Без аккаунта, backend, аналитики и обязательной сетевой синхронизации.
-
-## Качество и адаптивность
-
-- Доменная логика: 12/12 unit-тестов проходят в локальной проверке `npm run check`.
-- Добавлен Playwright smoke suite для 8 viewport: 320, 360, 390, 430, 768, 1024, 1280 и 1440 px; он проверяет лендинг, приложение, расчёты, сохранение, экспорт, мобильное меню и reduced motion.
-- Browser suite запускается в GitHub Actions и сохраняет screenshots + JSON report как artifact `responsive-browser-audit`.
-- Локальный Chromium-run в среде подготовки блокировался системной политикой навигации; успешный viewport PASS не заявляется до зелёного CI run. Эмуляция не заменяет физические Android/iOS проверки.
-- Motion/UI stack: CSS + IntersectionObserver без дополнительных runtime-библиотек. Обоснование Anime.js, Motion и Kokonut UI: [решение по стеку](./docs/TECH_STACK_DECISIONS.md).
-- Подход к качеству: [anti-slop правила](./docs/ANTI_SLOP_RULES.md); полная методика: [аудит продукта](./docs/PRODUCT_AUDIT.md).
-
-## Быстрый запуск
-
-Нужен Python 3 или любой статический HTTP-сервер:
+Run from the repository root:
 
 ```bash
-python3 -m http.server 4173
+cd ~/projects/cake-cost-calculator
+unzip -o ~/storage/shared/Download/phase2-inline-validation-v2.zip -d .
+bash apply-phase2.sh
 ```
 
-Откройте `http://localhost:4173`. Для проверки доменной логики:
+If you saved the archive in another folder, adjust only the path to the ZIP.
+
+The script:
+1. Confirms it is running from the repository root.
+2. Verifies the SHA-256 of `app/index.html` against the exact file you uploaded for review.
+3. Checks every patch anchor before writing anything.
+4. Creates a timestamped backup beside `app/index.html`.
+5. Updates only `app/index.html`.
+6. Runs `npm run check` and `git diff --check`.
+
+If the file has changed since the uploaded copy, the script stops without writing. Do not bypass this check; send a fresh `app/index.html` archive for review.
+
+## Rollback
+
+The script prints the exact backup filename, for example:
 
 ```bash
-npm run check
+cp app/index.html.phase2-backup-YYYYMMDD-HHMMSS app/index.html
 ```
 
-Прямое открытие `file://` не рекомендуется: PWA, service worker и модульные импорты требуют HTTP(S).
+Use the actual filename printed by the script. This restores only `app/index.html`.
 
-## Данные и приватность
+## After applying
 
-Данные остаются в localStorage текущего браузера. Основной ключ — `bento_cost_v3`; при отсутствии новых данных читается старый `bento_cost_v2`. Экспортируйте JSON перед очисткой браузера или переносом на другое устройство. Импорт заменяет текущую базу и калькуляторы.
+Check the output of the script, then inspect:
 
-Единицы измерения в исходном калькуляторе являются пользовательскими обозначениями расхода. Приложение суммирует денежную стоимость строк и не делает выдуманную физическую конвертацию между граммами, миллилитрами и объёмными мерами.
-
-## Развёртывание
-
-Репозиторий можно разместить на GitHub Pages. Включите GitHub Pages → Build and deployment → GitHub Actions. Workflow `.github/workflows/pages.yml` публикует статические файлы из корня репозитория. Для собственного хостинга достаточно загрузить всё содержимое репозитория как статические файлы.
-
-Скрипт `scripts/publish-termux.sh` автоматизирует публикацию из Termux. Он загружает весь текущий каталог Git-репозитория в указанный GitHub remote. Требуется авторизация GitHub через `gh auth login` либо настроенный Git credential helper.
-
-## Структура
-
-```text
-app/                 исходный калькулятор и чистая доменная логика
-site/                стили и интерактивность лендинга
-assets/              иконки
-docs/                архитектура, формулы, эксплуатация и релиз
- tests/              автоматические тесты
- scripts/            публикация из Termux
- .github/workflows/  CI и GitHub Pages
- index.html          motion-лендинг
- manifest.webmanifest, sw.js  PWA
+```bash
+git status --short
+git diff -- app/index.html
 ```
 
-## Проверка перед релизом
-
-- [x] Сохранён оригинальный интерфейс и формат `bento_cost_v3`.
-- [x] Поддержано чтение старого ключа `bento_cost_v2`.
-- [x] Вынесены и покрыты тестами расчётные функции.
-- [x] Добавлены импорт/экспорт с валидацией и подтверждением замены данных.
-- [x] Создан адаптивный лендинг с интерактивным демо и поддержкой reduced-motion.
-- [x] Добавлены PWA manifest, service worker, CI и GitHub Pages workflow.
-- [x] Добавлен скрипт публикации через Termux и проверка синтаксиса встроенного приложения.
-- [x] Добавлены лицензия, правила участия, безопасность и документация.
-- [x] Подготовлен Playwright Chromium viewport smoke suite; фактический результат проверяется в GitHub Actions.
-- [x] Добавлены регрессионные проверки небезопасных ID из резервной копии.
-- [ ] Проверить зелёный browser CI и реальный деплой на GitHub Pages.
-- [ ] Выполнить ручной тест на физических Android/iOS устройствах.
-
-## Лицензия
-
-MIT. См. [LICENSE](./LICENSE).
+Keep all existing phase 1 changes. Do not commit or push until the changes have been reviewed and approved.

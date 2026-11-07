@@ -736,6 +736,11 @@
       transition-duration:.001ms !important;
     }
   }
+  .inline-error{display:block;width:100%;flex-basis:100%;color:var(--danger);font-size:12px;line-height:1.35;margin:4px 2px 0}
+  .inline-error:empty{display:none}
+  .is-invalid{border-color:var(--danger)!important;box-shadow:0 0 0 3px rgba(193,59,46,.12)!important;background:var(--danger-soft)!important}
+  .validation-summary{padding:9px 11px;margin:0 0 10px;border-radius:10px;background:var(--danger-soft);color:var(--danger);font-size:13px}
+  .validation-summary:empty{display:none}
 :focus-visible{outline:3px solid var(--accent);outline-offset:2px}
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;animation-duration:.001ms!important;animation-iteration-count:1!important;transition-duration:.001ms!important}}
 </style>
@@ -858,6 +863,7 @@
       </button>
     </div>
     <div class="modal-body">
+      <div id="calcValidation" class="validation-summary" role="alert" aria-live="assertive"></div>
       <div id="ingRows"></div>
       <button class="add-row" id="addRowBtn" type="button">
         <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M12 5v14M5 12h14"/></svg>
@@ -947,6 +953,39 @@ import { calculateUnitCost, calculateTotal, validateBackup } from "./src/domain.
   const num = v => { const n = parseFloat(v); return isFinite(n) ? n : 0; };
   const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
   const isMobile = () => window.matchMedia('(max-width: 640px)').matches;
+
+  function inlineErrorFor(input, message) {
+    const id = input.id || 'field';
+    let note = document.querySelector('[data-inline-error-for="' + id + '"]');
+    if (!note) {
+      note = document.createElement('span');
+      note.className = 'inline-error';
+      note.dataset.inlineErrorFor = id;
+      note.setAttribute('aria-live', 'polite');
+      const anchor = input.closest('.pf-row') || input;
+      anchor.insertAdjacentElement('afterend', note);
+    }
+    input.classList.toggle('is-invalid', !!message);
+    input.setAttribute('aria-invalid', message ? 'true' : 'false');
+    note.textContent = message || '';
+  }
+
+  function focusInvalid(input) {
+    input.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    requestAnimationFrame(() => input.focus({ preventScroll: true }));
+  }
+
+  function validateProductForm() {
+    const fields = [
+      [$('#pfName'), !!$('#pfName').value.trim(), 'Укажите название продукта.'],
+      [$('#pfQty'), $('#pfQty').value.trim() !== '' && Number.isFinite(num($('#pfQty').value)) && num($('#pfQty').value) > 0, 'Укажите количество больше нуля.'],
+      [$('#pfPrice'), $('#pfPrice').value.trim() !== '' && Number.isFinite(num($('#pfPrice').value)) && num($('#pfPrice').value) >= 0, 'Укажите цену: ноль или больше.']
+    ];
+    fields.forEach(([el, ok, message]) => inlineErrorFor(el, ok ? '' : message));
+    const first = fields.find(field => !field[1]);
+    if (first) focusInvalid(first[0]);
+    return !first;
+  }
 
   function pluralForm(n, forms) {
     const m = n % 100, d = n % 10;
@@ -1258,12 +1297,56 @@ import { calculateUnitCost, calculateTotal, validateBackup } from "./src/domain.
     normalizeCalc(c);
     editing = c;
     $('#calcTitle').value = c.name;
+    $('#calcValidation').textContent = '';
+    $('#calcTitle').classList.remove('is-invalid');
+    $('#calcTitle').setAttribute('aria-invalid', 'false');
     updateCalcIcon();
     renderRows();
     lastTotal = calcTotal(c);
     $('#calcTotal').textContent = money(lastTotal);
     openOverlay('#calcOverlay');
     if (!id && !isMobile()) setTimeout(() => $('#calcTitle').focus(), 300);
+  }
+
+  function validateCalculator() {
+    if (!editing) return true;
+    const summary = $('#calcValidation');
+    summary.textContent = '';
+    const title = $('#calcTitle');
+    title.classList.remove('is-invalid');
+    title.setAttribute('aria-invalid', 'false');
+
+    if (editing.items.length && !editing.name.trim()) {
+      title.classList.add('is-invalid');
+      title.setAttribute('aria-invalid', 'true');
+      summary.textContent = 'Укажите название калькулятора.';
+      focusInvalid(title);
+      return false;
+    }
+
+    for (let i = 0; i < editing.items.length; i++) {
+      const item = editing.items[i];
+      const row = $('#ingRows').querySelector('.row[data-i="' + i + '"]');
+      if (!row) continue;
+      const picker = row.querySelector('.picker');
+      const qty = row.querySelector('.qty');
+      const productOk = !!state.products.find(product => product.id === item.productId);
+      const qtyOk = qty.value.trim() !== '' && Number.isFinite(num(qty.value)) && num(qty.value) > 0;
+
+      picker.classList.toggle('is-invalid', !productOk);
+      picker.setAttribute('aria-invalid', productOk ? 'false' : 'true');
+      row.querySelector('.qty-wrap').classList.toggle('is-invalid', !qtyOk);
+      qty.setAttribute('aria-invalid', qtyOk ? 'false' : 'true');
+
+      if (!productOk || !qtyOk) {
+        summary.textContent = !productOk
+          ? 'Выберите продукт в отмеченной строке.'
+          : 'Укажите количество больше нуля.';
+        focusInvalid(!productOk ? picker : qty);
+        return false;
+      }
+    }
+    return true;
   }
 
   function closeCalc() {
@@ -1321,6 +1404,7 @@ import { calculateUnitCost, calculateTotal, validateBackup } from "./src/domain.
   function chooseProduct(index, productId) {
     if (!editing) return;
     editing.items[index].productId = productId;
+    $('#calcValidation').textContent = '';
     renderRows();
     updateTotal();
     save();
@@ -1363,6 +1447,10 @@ import { calculateUnitCost, calculateTotal, validateBackup } from "./src/domain.
     const i = +row.dataset.i;
     const val = Math.max(0, num(e.target.value));
     editing.items[i].qty = val;
+    const qtyOk = e.target.value.trim() !== '' && Number.isFinite(num(e.target.value)) && val > 0;
+    e.target.closest('.qty-wrap').classList.toggle('is-invalid', !qtyOk);
+    e.target.setAttribute('aria-invalid', qtyOk ? 'false' : 'true');
+    if (qtyOk) $('#calcValidation').textContent = '';
 
     const p = state.products.find(x => x.id === editing.items[i].productId);
     row.querySelector('.row-cost').textContent = money(p ? unitCost(p) * val : 0);
@@ -1381,6 +1469,13 @@ import { calculateUnitCost, calculateTotal, validateBackup } from "./src/domain.
   $('#calcTitle').addEventListener('input', e => {
     if (!editing) return;
     editing.name = e.target.value;
+    if (editing.name.trim()) {
+      e.target.classList.remove('is-invalid');
+      e.target.setAttribute('aria-invalid', 'false');
+      if ($('#calcValidation').textContent === 'Укажите название калькулятора.') {
+        $('#calcValidation').textContent = '';
+      }
+    }
     save();
   });
   $('#calcTitle').addEventListener('keydown', e => {
@@ -1388,7 +1483,10 @@ import { calculateUnitCost, calculateTotal, validateBackup } from "./src/domain.
   });
 
   $('#calcClose').addEventListener('click', closeCalc);
-  $('#calcDone').addEventListener('click', closeCalc);
+  $('#calcDone').addEventListener('click', () => {
+    if (editing && editing.items.length && !validateCalculator()) return;
+    closeCalc();
+  });
 
   $('#calcDeleteBtn').addEventListener('click', async () => {
     if (!editing) return;
@@ -1738,14 +1836,20 @@ import { calculateUnitCost, calculateTotal, validateBackup } from "./src/domain.
   });
 
   function updatePfAdd() {
-    const ok = $('#pfName').value.trim().length > 0 &&
-               num($('#pfQty').value) > 0 &&
-               $('#pfPrice').value !== '' &&
-               num($('#pfPrice').value) >= 0;
-    $('#pfAdd').disabled = !ok;
+    // Кнопка остаётся доступной: нажатие показывает точные ошибки у полей.
+    $('#pfAdd').disabled = false;
   }
 
-  ['#pfName', '#pfQty', '#pfPrice'].forEach(s => $(s).addEventListener('input', updatePfAdd));
+  ['#pfName', '#pfQty', '#pfPrice'].forEach(s => $(s).addEventListener('input', () => {
+    const el = $(s);
+    const valid = s === '#pfName'
+      ? !!el.value.trim()
+      : s === '#pfQty'
+        ? el.value.trim() !== '' && num(el.value) > 0
+        : el.value.trim() !== '' && num(el.value) >= 0;
+    if (valid) inlineErrorFor(el, '');
+    updatePfAdd();
+  }));
 
   $('#pfName').addEventListener('keydown', e => {
     if (e.key === 'Enter') { e.preventDefault(); $('#pfQty').focus(); }
@@ -1761,6 +1865,7 @@ import { calculateUnitCost, calculateTotal, validateBackup } from "./src/domain.
   });
 
   function resetPfForm() {
+    ['#pfName', '#pfQty', '#pfPrice'].forEach(sel => inlineErrorFor($(sel), ''));
     $('#pfName').value = '';
     $('#pfQty').value = '';
     $('#pfUnit').value = 'г';
@@ -1773,7 +1878,7 @@ import { calculateUnitCost, calculateTotal, validateBackup } from "./src/domain.
     const name = $('#pfName').value.trim();
     const qty = num($('#pfQty').value);
     const price = num($('#pfPrice').value);
-    if (!name || qty <= 0 || price < 0) return;
+    if (!validateProductForm()) return;
 
     /* ── редактирование существующего ── */
     if (editingProductId) {
@@ -1918,11 +2023,20 @@ import { calculateUnitCost, calculateTotal, validateBackup } from "./src/domain.
       a.href = url; a.download = 'culinary-calculator-' + (recoveryMode ? 'recovery-' : 'backup-') + new Date().toISOString().slice(0,10) + '.json';
       document.body.appendChild(a); a.click(); a.remove(); setTimeout(() => URL.revokeObjectURL(url), 1000);
     });
-    importBtn.addEventListener('click', () => importFile.click());
+    const importStatus = document.createElement('span');
+    importStatus.className = 'save-status';
+    importStatus.setAttribute('role', 'status');
+    importStatus.setAttribute('aria-live', 'polite');
+    importBtn.insertAdjacentElement('afterend', importStatus);
+    importBtn.addEventListener('click', () => {
+      importStatus.textContent = '';
+      importFile.click();
+    });
     importFile.addEventListener('change', async () => {
       const file = importFile.files && importFile.files[0];
       if (!file) return;
       try {
+        importStatus.textContent = '';
         const parsed = JSON.parse(await file.text());
         const candidate = parsed && parsed.data ? parsed.data : parsed;
         const result = validateBackup(candidate);
@@ -1941,7 +2055,7 @@ import { calculateUnitCost, calculateTotal, validateBackup } from "./src/domain.
         renderGrid();
         await confirmDialog({ title: 'Импорт завершён', text: 'Резервная копия успешно импортирована.', okText: 'Готово', danger: false });
       } catch (error) {
-        await confirmDialog({ title: 'Не удалось импортировать', text: error.message || 'Файл имеет неверный формат.', okText: 'Понятно', danger: false });
+        importStatus.textContent = 'Не удалось импортировать: ' + (error.message || 'проверьте формат и структуру JSON-файла.');
       } finally { importFile.value = ''; }
     });
   }
