@@ -1,5 +1,5 @@
-const CACHE = 'culinary-calculator-v2';
-const CORE = ['./', './index.html', './app/', './app/index.html', './app/recipes.html', './app/src/recipes.js', './app/src/recipes-domain.js', './manifest.webmanifest', './assets/icon.svg', './assets/icon-192.png', './assets/icon-512.png', './app/src/domain.js', './site/styles.css', './site/main.js'];
+const CACHE = 'culinary-calculator-v3';
+const CORE = ['./', './index.html', './app/', './app/index.html', './app/recipes.html', './app/summary.html', './app/src/recipes.js', './app/src/recipes-domain.js', './app/src/summary.js', './app/src/summary-domain.js', './manifest.webmanifest', './assets/icon.svg', './assets/icon-192.png', './assets/icon-512.png', './app/src/domain.js', './site/styles.css', './site/main.js'];
 self.addEventListener('install', event => event.waitUntil(caches.open(CACHE).then(cache => cache.addAll(CORE)).then(() => self.skipWaiting())));
 self.addEventListener('activate', event => event.waitUntil(caches.keys().then(keys => Promise.all(keys.filter(key => key.startsWith('culinary-calculator-') && key !== CACHE).map(key => caches.delete(key)))).then(() => self.clients.claim())));
 self.addEventListener('fetch', event => {
